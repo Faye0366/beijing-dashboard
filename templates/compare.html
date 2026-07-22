@@ -1035,7 +1035,7 @@ function renderChannelPublicTable(datesA, datesB) {
 
             html += `<tr style="${summaryStyle}">
                 <td style="text-align:left;font-weight:600;">${item.channel}</td>
-                <td style="text-align:left;color:${item.isSummary ? '#e85d6a' : '#666'};font-weight:${item.isSummary ? '700' : '400'};">${item.location}</td>
+                <td style="text-align:left;color:#666;font-weight:${item.isSummary ? '700' : '400'};">${item.location}</td>
                 <td>${formatNumber(item.valA)}</td>
                 <td>${formatNumber(item.valB)}</td>
                 <td class="${diffClass(item.diff)}">${diffStr}</td>
