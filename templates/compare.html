@@ -1072,11 +1072,8 @@ function renderChannelPublicChart(list) {
         return;
     }
 
-    // 构建标签和数值
-    const categories = list.map(item => {
-        const label = item.isSummary ? item.location : item.channel + '-' + item.location;
-        return label;
-    });
+    // 构建标签和数值（汇总行也带 channel 前缀，与表格列名一致）
+    const categories = list.map(item => item.channel + '-' + item.location);
     const valA = list.map(item => item.valA);
     const valB = list.map(item => item.valB);
 
