@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流量套餐订单数据看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 24px 32px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header .update-time {
+            font-size: 13px;
+            opacity: 0.85;
+        }
+
+        /* ===== 指标卡片 ===== */
+        .cards-section {
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 8px 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-card .label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .metric-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .metric-card .sub {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+
+        .metric-card.total .value { color: #667eea; }
+        .metric-card.public .value { color: #e85d6a; }
+        .metric-card.private .value { color: #3ba272; }
+        .metric-card.external .value { color: #fac858; }
+        .metric-card.yearly .value { color: #9c27b0; }
+
+        .cards-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 10px;
+            padding-left: 4px;
+        }
+
+        .cards-row {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 12px;
+        }
+
+        .metric-card.yearly {
+            border-left: 3px solid #9c27b0;
+        }
+
+        .metric-card:not(.yearly) {
+            border-left: 3px solid #667eea;
+        }
+
+        .metric-card.yearly .label::before {
+            content: "年累计 · ";
+            font-size: 11px;
+            color: #9c27b0;
+            font-weight: 600;
+        }
+
+        .metric-card:not(.yearly) .label::before {
+            content: "当月 · ";
+            font-size: 11px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .month-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .month-selector select {
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .month-selector select option {
+            color: #333;
+        }
+
+        .month-selector label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* ===== 图表区域 ===== */
+        .chart-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .chart-controls select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+            background: #fff;
+        }
+
+        .chart-controls select:focus {
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #555;
+            user-select: none;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 190px;
+        }
+
+        .chart-container.tall {
+            height: 225px;
+        }
+
+        /* ===== TOP5 产品表格 ===== */
+        .top-product-table-wrap {
+            overflow-x: auto;
+        }
+
+        .top-product-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .top-product-table thead th {
+            background: #f5f6fa;
+            color: #555;
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 2px solid #e0e0e0;
+            white-space: nowrap;
+        }
+
+        .top-product-table thead th:first-child {
+            text-align: left;
+        }
+
+        .top-product-table tbody td {
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+        }
+
+        .top-product-table tbody td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .top-product-table tbody tr:hover {
+            background: #f9f9fc;
+        }
+
+        .top-product-table .rank {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-right: 2px;
+        }
+
+        .top-product-table .rank-1 { background: #e85d6a; }
+        .top-product-table .rank-2 { background: #fac858; }
+        .top-product-table .rank-3 { background: #3ba272; }
+        .top-product-table .rank-4 { background: #667eea; }
+        .top-product-table .rank-5 { background: #9c27b0; }
+
+        .top-product-table .product-name {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .top-product-table .no-data {
+            color: #ccc;
+            text-align: center;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1200px) {
+            .cards-row {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cards-section {
+                grid-template-columns: 1fr;
+            }
+            .cards-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>北京移动流量套餐订单数据看板</h1>
+    <div class="month-selector">
+        <label>当前月份：</label>
+        <select id="cardMonthSelect"></select>
+        <span class="update-time" id="updateTime"></span>
+        <a href="compare.html" style="margin-left:16px;padding:6px 18px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">数据对比分析 →</a>
+    </div>
+</div>
+
+<!-- ===== 订单量卡片（年累计 + 当月，同一行） ===== -->
+<div class="cards-section" id="cardsSection">
+    <div class="section-title">订单量概览（年累计 / 当月）</div>
+    <div class="cards-row">
+        <div class="metric-card yearly total">
+            <div class="label">整体</div>
+            <div class="value" id="cardYearlyTotal">0</div>
+            <div class="sub" id="cardYearlyTotalSub"></div>
+        </div>
+        <div class="metric-card yearly public">
+            <div class="label">公域</div>
+            <div class="value" id="cardYearlyPublic">0</div>
+            <div class="sub" id="cardYearlyPublicSub"></div>
+        </div>
+        <div class="metric-card yearly private">
+            <div class="label">私域</div>
+            <div class="value" id="cardYearlyPrivate">0</div>
+            <div class="sub" id="cardYearlyPrivateSub"></div>
+        </div>
+        <div class="metric-card yearly external">
+            <div class="label">外部渠道</div>
+            <div class="value" id="cardYearlyExternal">0</div>
+            <div class="sub" id="cardYearlyExternalSub"></div>
+        </div>
+        <div class="metric-card total">
+            <div class="label">整体</div>
+            <div class="value" id="cardTotal">0</div>
+            <div class="sub" id="cardTotalSub"></div>
+        </div>
+        <div class="metric-card public">
+            <div class="label">公域</div>
+            <div class="value" id="cardPublic">0</div>
+            <div class="sub" id="cardPublicSub"></div>
+        </div>
+        <div class="metric-card private">
+            <div class="label">私域</div>
+            <div class="value" id="cardPrivate">0</div>
+            <div class="sub" id="cardPrivateSub"></div>
+        </div>
+        <div class="metric-card external">
+            <div class="label">外部渠道</div>
+            <div class="value" id="cardExternal">0</div>
+            <div class="sub" id="cardExternalSub"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 场景2&3: 每月订单量趋势 + 日订单量趋势（左右排列）===== -->
+<div class="charts-row">
+    <!-- 每月订单量趋势（左） -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">每月订单量趋势</div>
+            <div class="checkbox-group" id="monthlyCheckboxGroup">
+                <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
+                <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
+                <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
+                <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
+            </div>
+        </div>
+        <div class="chart-container" id="monthlyChart"></div>
+    </div>
+
+    <!-- 日订单量趋势（右） -->
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">日订单量趋势</div>
+            <div class="checkbox-group" id="dailyCheckboxGroup">
+                <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
+                <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
+                <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
+                <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
+            </div>
+        </div>
+        <div class="chart-container" id="dailyChart"></div>
+    </div>
+</div>
+
+<!-- ===== 场景4: 按投放点位展示每月公域私域订单量 ===== -->
+<div class="chart-section">
+    <div class="chart-header">
+        <div class="chart-title">各投放点位月度订单量（公域 / 私域）</div>
+        <div class="checkbox-group" id="channelCheckboxGroup">
+            <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
+            <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
+            <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
+        </div>
+    </div>
+    <div class="chart-container tall" id="channelChart"></div>
+</div>
+
+<!-- ===== 场景5: 各投放点位 TOP5 产品（表格） ===== -->
+<div class="chart-section">
+    <div class="chart-header">
+        <div class="chart-title">各投放点位销量TOP5产品</div>
+    </div>
+    <div class="top-product-table-wrap" id="topProductTable"></div>
+</div>
+
+<script>
+// ===== 数据会被嵌入这里 =====
+// ${DATA_PLACEHOLDER}
+
+// ===== 图表实例 =====
+let monthlyChart, dailyChart, channelChart;
+
+// ===== 颜色配置 =====
+const COLORS = {
+    total: '#667eea',
+    '公域': '#e85d6a',
+    '私域': '#3ba272',
+    '外部渠道': '#fac858'
+};
+
+// ===== 工具函数 =====
+function formatNumber(n) {
+    return n.toLocaleString('zh-CN');
+}
+
+function getDomainColor(domain) {
+    return COLORS[domain] || '#999';
+}
+
+// ===== 环比计算：当月截至最后一天 vs 上月同期(1日~同一天数) =====
+function calcMoM(month) {
+    const curDaily = DASHBOARD_DATA.daily_data[month];
+    if (!curDaily || !curDaily.days || curDaily.days.length === 0) {
+        return { total: null, '公域': null, '私域': null, '外部渠道': null };
+    }
+
+    // 当月截至最后一天的天数
+    const dayCount = curDaily.days.length;
+    const domains = ['total', '公域', '私域', '外部渠道'];
+
+    // 当月累计（截至最后一天）
+    const curSum = {};
+    for (const d of domains) {
+        curSum[d] = curDaily[d].reduce((a, b) => a + b, 0);
+    }
+
+    // 找上月 key
+    const [year, mon] = month.split('-').map(Number);
+    let prevYear = year, prevMon = mon - 1;
+    if (prevMon < 1) { prevMon = 12; prevYear--; }
+    const prevMonth = `${prevYear}-${String(prevMon).padStart(2, '0')}`;
+    const prevDaily = DASHBOARD_DATA.daily_data[prevMonth];
+
+    const result = {};
+    for (const d of domains) {
+        if (!prevDaily || !prevDaily.days || prevDaily.days.length === 0) {
+            result[d] = null;
+            continue;
+        }
+        // 上月同期：取前 dayCount 天
+        const sliceLen = Math.min(dayCount, prevDaily.days.length);
+        let prevSum = 0;
+        for (let i = 0; i < sliceLen; i++) {
+            prevSum += prevDaily[d][i];
+        }
+        if (prevSum === 0) {
+            result[d] = null;
+        } else {
+            result[d] = ((curSum[d] - prevSum) / prevSum) * 100;
+        }
+    }
+    return result;
+}
+
+// ===== 场景1: 指标卡片 =====
+function updateCards() {
+    const month = document.getElementById('cardMonthSelect').value;
+    const monthData = DASHBOARD_DATA.monthly_data.find(d => d.month === month);
+    if (!monthData) return;
+
+    // 当月数据
+    document.getElementById('cardTotal').textContent = formatNumber(monthData.total);
+    document.getElementById('cardPublic').textContent = formatNumber(monthData['公域']);
+    document.getElementById('cardPrivate').textContent = formatNumber(monthData['私域']);
+    document.getElementById('cardExternal').textContent = formatNumber(monthData['外部渠道']);
+
+    // 当月占比 & 环比上月同期
+    const pubPct = monthData.total > 0 ? (monthData['公域'] / monthData.total * 100).toFixed(1) : 0;
+    const priPct = monthData.total > 0 ? (monthData['私域'] / monthData.total * 100).toFixed(1) : 0;
+    const extPct = monthData.total > 0 ? (monthData['外部渠道'] / monthData.total * 100).toFixed(1) : 0;
+
+    // 计算环比：当月截至最后一天 vs 上月同期(1日~同一天数)
+    const momData = calcMoM(month);
+    const fmtPct = function(val) {
+        if (val === null) return '';
+        const sign = val >= 0 ? '+' : '';
+        return `环比${sign}${val.toFixed(1)}%`;
+    };
+    const fmtColor = function(val) {
+        if (val === null) return '#aaa';
+        return val >= 0 ? '#e85d6a' : '#3ba272'; // 涨红跌绿
+    };
+
+    document.getElementById('cardTotalSub').innerHTML = `占比 ${pubPct}% <span style="color:${fmtColor(momData.total)};font-weight:600;">${fmtPct(momData.total)}</span>`;
+    document.getElementById('cardPublicSub').innerHTML = `占比 ${pubPct}% <span style="color:${fmtColor(momData['公域'])};font-weight:600;">${fmtPct(momData['公域'])}</span>`;
+    document.getElementById('cardPrivateSub').innerHTML = `占比 ${priPct}% <span style="color:${fmtColor(momData['私域'])};font-weight:600;">${fmtPct(momData['私域'])}</span>`;
+    document.getElementById('cardExternalSub').innerHTML = `占比 ${extPct}% <span style="color:${fmtColor(momData['外部渠道'])};font-weight:600;">${fmtPct(momData['外部渠道'])}</span>`;
+
+    // 年累计：从1月累加到所选月份
+    let yearlyTotal = 0, yearlyPublic = 0, yearlyPrivate = 0, yearlyExternal = 0;
+    for (const d of DASHBOARD_DATA.monthly_data) {
+        if (d.month <= month) {
+            yearlyTotal += d.total;
+            yearlyPublic += d['公域'];
+            yearlyPrivate += d['私域'];
+            yearlyExternal += d['外部渠道'];
+        }
+    }
+
+    document.getElementById('cardYearlyTotal').textContent = formatNumber(yearlyTotal);
+    document.getElementById('cardYearlyPublic').textContent = formatNumber(yearlyPublic);
+    document.getElementById('cardYearlyPrivate').textContent = formatNumber(yearlyPrivate);
+    document.getElementById('cardYearlyExternal').textContent = formatNumber(yearlyExternal);
+
+    const yPubPct = yearlyTotal > 0 ? (yearlyPublic / yearlyTotal * 100).toFixed(1) : 0;
+    const yPriPct = yearlyTotal > 0 ? (yearlyPrivate / yearlyTotal * 100).toFixed(1) : 0;
+    const yExtPct = yearlyTotal > 0 ? (yearlyExternal / yearlyTotal * 100).toFixed(1) : 0;
+    document.getElementById('cardYearlyTotalSub').textContent = `2026年1月~${month}累计`;
+    document.getElementById('cardYearlyPublicSub').textContent = `占比 ${yPubPct}%`;
+    document.getElementById('cardYearlyPrivateSub').textContent = `占比 ${yPriPct}%`;
+    document.getElementById('cardYearlyExternalSub').textContent = `占比 ${yExtPct}%`;
+}
+
+// ===== 场景2: 每月订单量趋势 =====
+function updateMonthlyChart() {
+    const checked = Array.from(document.querySelectorAll('#monthlyCheckboxGroup input:checked')).map(cb => cb.value);
+    const months = DASHBOARD_DATA.months;
+    const monthLabels = months.map(m => m.replace('-', '年') + '月');
+
+    const series = checked.map(domain => ({
+        name: domain === 'total' ? '整体' : domain,
+        type: 'bar',
+        data: DASHBOARD_DATA.monthly_data.map(d => d[domain]),
+        itemStyle: { color: getDomainColor(domain) },
+        barGap: '10%',
+        barCategoryGap: '40%',
+    }));
+
+    // 如果只选了一个，加上折线
+    if (checked.length === 1) {
+        series[0].type = 'bar';
+    }
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: function(params) {
+                let html = params[0].name + '<br/>';
+                params.forEach(p => {
+                    html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
+                });
+                return html;
+            }
+        },
+        legend: {
+            data: checked.map(d => d === 'total' ? '整体' : d),
+            top: 0,
+            right: 0,
+        },
+        grid: { left: 60, right: 30, top: 40, bottom: 40 },
+        xAxis: {
+            type: 'category',
+            data: monthLabels,
+            axisLabel: { fontSize: 12 },
+        },
+        yAxis: {
+            type: 'value',
+            name: '订单量',
+            axisLabel: { formatter: function(v) { return formatNumber(v); } },
+        },
+        series: series,
+        dataZoom: [
+            { type: 'inside', start: 0, end: 100 },
+            { type: 'slider', start: 0, end: 100, height: 20, bottom: 5 },
+        ],
+    };
+
+    monthlyChart.setOption(option, true);
+}
+
+// ===== 场景3: 日订单量趋势 =====
+function updateDailyChart() {
+    const month = document.getElementById('cardMonthSelect').value;
+    const checked = Array.from(document.querySelectorAll('#dailyCheckboxGroup input:checked')).map(cb => cb.value);
+    const dailyData = DASHBOARD_DATA.daily_data[month];
+    if (!dailyData) return;
+
+    const days = dailyData.days;
+    const xLabels = days.map(d => d + '日');
+
+    const series = checked.map(domain => ({
+        name: domain === 'total' ? '整体' : domain,
+        type: 'line',
+        data: dailyData[domain],
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        itemStyle: { color: getDomainColor(domain) },
+        lineStyle: { width: 2 },
+        areaStyle: checked.length === 1 ? { opacity: 0.15 } : undefined,
+    }));
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            formatter: function(params) {
+                let html = `${month.replace('-', '年')}月 ${params[0].name}<br/>`;
+                params.forEach(p => {
+                    html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
+                });
+                return html;
+            }
+        },
+        legend: {
+            data: checked.map(d => d === 'total' ? '整体' : d),
+            top: 0,
+            right: 0,
+        },
+        grid: { left: 60, right: 30, top: 40, bottom: 50 },
+        xAxis: {
+            type: 'category',
+            data: xLabels,
+            axisLabel: { fontSize: 11 },
+            boundaryGap: false,
+        },
+        yAxis: {
+            type: 'value',
+            name: '订单量',
+            axisLabel: { formatter: function(v) { return formatNumber(v); } },
+        },
+        series: series,
+        dataZoom: [
+            { type: 'inside', start: 0, end: 100 },
+            { type: 'slider', start: 0, end: 100, height: 20, bottom: 8 },
+        ],
+    };
+
+    dailyChart.setOption(option, true);
+}
+
+// ===== 场景4: 投放点位月度订单量 =====
+function updateChannelChart() {
+    const month = document.getElementById('cardMonthSelect').value;
+    const checked = Array.from(document.querySelectorAll('#channelCheckboxGroup input:checked')).map(cb => cb.value);
+    const channelData = DASHBOARD_DATA.channel_data[month];
+    if (!channelData) return;
+
+    // 过滤掉 total=0 的点位，并按 total 降序排列
+    const filtered = channelData.filter(d => d.total > 0).sort((a, b) => b.total - a.total);
+    const channels = filtered.map(d => d.channel);
+
+    const series = checked.map(domain => ({
+        name: domain,
+        type: 'bar',
+        data: filtered.map(d => d[domain]),
+        itemStyle: { color: getDomainColor(domain) },
+        stack: 'channel',
+    }));
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: function(params) {
+                let html = `${month.replace('-', '年')}月<br/>`;
+                html += `<b>${params[0].name}</b><br/>`;
+                let total = 0;
+                params.forEach(p => {
+                    html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
+                    total += p.value;
+                });
+                html += `合计: <b>${formatNumber(total)}</b>`;
+                return html;
+            }
+        },
+        legend: {
+            data: checked,
+            top: 0,
+            right: 0,
+        },
+        grid: { left: 100, right: 30, top: 40, bottom: 40 },
+        xAxis: {
+            type: 'value',
+            name: '订单量',
+            axisLabel: { formatter: function(v) { return formatNumber(v); } },
+        },
+        yAxis: {
+            type: 'category',
+            data: channels,
+            axisLabel: { fontSize: 12 },
+            inverse: true,
+        },
+        series: series,
+    };
+
+    channelChart.setOption(option, true);
+}
+
+// ===== 场景5: 各投放点位 TOP5 产品（表格） =====
+function updateTopProductTable() {
+    const month = document.getElementById('cardMonthSelect').value;
+    const monthData = DASHBOARD_DATA.channel_top_products[month] || {};
+    const channels = DASHBOARD_DATA.channels.filter(ch => ch !== '未知');
+
+    // 按各点位 total 降序排列
+    const channelOrder = DASHBOARD_DATA.channel_data[month]
+        ? DASHBOARD_DATA.channel_data[month]
+            .filter(d => d.total > 0)
+            .sort((a, b) => b.total - a.total)
+            .map(d => d.channel)
+        : channels;
+
+    let html = '<table class="top-product-table"><thead><tr>';
+    html += '<th>排名</th>';
+    for (const ch of channelOrder) {
+        html += `<th>${ch}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    for (let rank = 0; rank < 5; rank++) {
+        html += '<tr>';
+        html += `<td><span class="rank rank-${rank + 1}">${rank + 1}</span></td>`;
+        for (const ch of channelOrder) {
+            const products = monthData[ch] || [];
+            const item = products[rank];
+            if (item) {
+                html += `<td><span class="product-name">${item.name}</span><br><span style="color:#888;font-size:12px;">${formatNumber(item.value)} 单</span></td>`;
+            } else {
+                html += '<td class="no-data">—</td>';
+            }
+        }
+        html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    document.getElementById('topProductTable').innerHTML = html;
+}
+
+// ===== 初始化 =====
+function init() {
+    // 初始化图表
+    monthlyChart = echarts.init(document.getElementById('monthlyChart'));
+    dailyChart = echarts.init(document.getElementById('dailyChart'));
+    channelChart = echarts.init(document.getElementById('channelChart'));
+
+    // 填充月份选择器
+    const months = DASHBOARD_DATA.months;
+    const monthOptions = months.map(m => {
+        const label = m.replace('-', '年') + '月';
+        return `<option value="${m}">${label}</option>`;
+    }).join('');
+
+    document.getElementById('cardMonthSelect').innerHTML = monthOptions;
+
+    // 默认选中最新月份
+    const defaultMonth = DASHBOARD_DATA.current_month;
+    document.getElementById('cardMonthSelect').value = defaultMonth;
+
+    // 更新时间
+    document.getElementById('updateTime').textContent = `数据更新于 ${DASHBOARD_DATA.generated_at}`;
+
+    // 头部月份联动：切换时同步刷新所有月份相关模块
+    document.getElementById('cardMonthSelect').addEventListener('change', function() {
+        updateCards();
+        updateDailyChart();
+        updateChannelChart();
+        updateTopProductTable();
+    });
+
+    document.querySelectorAll('#monthlyCheckboxGroup input').forEach(cb => {
+        cb.addEventListener('change', updateMonthlyChart);
+    });
+    document.querySelectorAll('#dailyCheckboxGroup input').forEach(cb => {
+        cb.addEventListener('change', updateDailyChart);
+    });
+    document.querySelectorAll('#channelCheckboxGroup input').forEach(cb => {
+        cb.addEventListener('change', updateChannelChart);
+    });
+
+    // 窗口resize
+    window.addEventListener('resize', () => {
+        monthlyChart.resize();
+        dailyChart.resize();
+        channelChart.resize();
+    });
+
+    // 首次渲染
+    updateCards();
+    updateMonthlyChart();
+    updateDailyChart();
+    updateChannelChart();
+    updateTopProductTable();
+}
+
+// 启动
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

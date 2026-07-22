@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+.workbuddy/
+*.tmp
+data.json
