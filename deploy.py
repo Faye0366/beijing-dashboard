@@ -20,12 +20,21 @@ from process_data import main as process_data
 
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 显式指定 SSH 命令路径，避免 DNS 解析问题
+# 如果系统 ssh 能正常解析 github.com，可注释掉下面这行
+SSH_COMMAND = r"C:\Users\Faye\.workbuddy\vendor\PortableGit\usr\bin\ssh.exe"
+
 
 def run_git(*args):
     """执行 git 命令并打印输出"""
     cmd = ["git"] + list(args)
     print(f"  $ {' '.join(cmd)}")
-    result = subprocess.run(cmd, cwd=OUTPUT_DIR, capture_output=True, text=True, encoding="utf-8")
+    env = os.environ.copy()
+    if os.path.exists(SSH_COMMAND):
+        env["GIT_SSH_COMMAND"] = f'"{SSH_COMMAND}"'
+    result = subprocess.run(
+        cmd, cwd=OUTPUT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
+    )
     if result.stdout.strip():
         print(f"    {result.stdout.strip()}")
     if result.returncode != 0:
