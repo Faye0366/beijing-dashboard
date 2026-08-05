@@ -335,7 +335,7 @@
             justify-content: flex-end;
         }
 
-        /* ===== 充流量TOP15 对比表格 ===== */
+        /* ===== 充流量TOP20 对比表格 ===== */
         .cll-rank {
             display: inline-block;
             width: 24px;
@@ -354,7 +354,8 @@
         .cll-rank-4 { background: #3ba272; }
         .cll-rank-5 { background: #667eea; }
         .cll-rank-6, .cll-rank-7, .cll-rank-8, .cll-rank-9, .cll-rank-10,
-        .cll-rank-11, .cll-rank-12, .cll-rank-13, .cll-rank-14, .cll-rank-15 {
+        .cll-rank-11, .cll-rank-12, .cll-rank-13, .cll-rank-14, .cll-rank-15,
+        .cll-rank-16, .cll-rank-17, .cll-rank-18, .cll-rank-19, .cll-rank-20 {
             background: #9c27b0;
         }
 
@@ -526,9 +527,9 @@
     </div>
 </div>
 
-<!-- ===== 充流量频道TOP15产品对比 ===== -->
+<!-- ===== 充流量频道TOP20产品对比 ===== -->
 <div class="table-section">
-    <div class="table-title">充流量频道销量TOP15产品对比（按时段B单量排序）</div>
+    <div class="table-title">充流量频道销量TOP20产品对比（按时段B单量排序）</div>
     <div style="overflow-x:auto;">
         <table class="compare-table" id="cllTable">
             <thead>
@@ -868,7 +869,7 @@ function renderDetailTable(details) {
     return html;
 }
 
-// ===== 渲染充流量TOP15对比表格 =====
+// ===== 渲染充流量TOP20对比表格 =====
 function renderCllTopTable(datesA, datesB) {
     const cllData = COMPARE_DATA.cll_product_daily || {};
 
@@ -892,7 +893,7 @@ function renderCllTopTable(datesA, datesB) {
         }
     }
 
-    // 合并所有产品，按时段B单量降序取TOP15
+    // 合并所有产品，按时段B单量降序取TOP20
     const allProducts = new Set([...Object.keys(sumA), ...Object.keys(sumB)]);
     const list = [];
     for (const product of allProducts) {
@@ -902,21 +903,21 @@ function renderCllTopTable(datesA, datesB) {
         const pct = valA > 0 ? ((valB - valA) / valA) * 100 : null;
         list.push({ product, valA, valB, diff, pct });
     }
-    // 按时段B单量降序，取TOP15
+    // 按时段B单量降序，取TOP20
     list.sort((a, b) => b.valB - a.valB);
-    const top15 = list.slice(0, 15);
+    const top20 = list.slice(0, 20);
 
     // 趋势条缩放：用差值绝对值的最大值
-    const maxAbsDiff = top15.length > 0 ? Math.max(...top15.map(i => Math.abs(i.diff)), 1) : 1;
+    const maxAbsDiff = top20.length > 0 ? Math.max(...top20.map(i => Math.abs(i.diff)), 1) : 1;
 
     const tbody = document.getElementById('cllTbody');
     let html = '';
 
-    if (top15.length === 0) {
+    if (top20.length === 0) {
         html = '<tr><td colspan="7" style="color:#ccc;text-align:center;padding:16px;">所选时段无充流量频道数据</td></tr>';
     } else {
-        for (let i = 0; i < top15.length; i++) {
-            const item = top15[i];
+        for (let i = 0; i < top20.length; i++) {
+            const item = top20[i];
             const diffStr = (item.diff >= 0 ? '+' : '') + formatNumber(item.diff);
             const pctStr = item.pct !== null ? formatPct(item.pct) : '';
             const tag = item.valA === 0 && item.valB > 0 ? '<span class="tag-new">新增</span>' :
