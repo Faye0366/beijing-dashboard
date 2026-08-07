@@ -395,8 +395,8 @@
             <div class="chart-title">每月订单量趋势（按年对比）</div>
             <div class="checkbox-group" id="monthlyCheckboxGroup">
                 <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
-                <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
-                <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
+                <label class="checkbox-item"><input type="checkbox" value="公域"> 公域</label>
+                <label class="checkbox-item"><input type="checkbox" value="私域"> 私域</label>
                 <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
             </div>
         </div>
@@ -646,7 +646,7 @@ function updateCards() {
     document.getElementById('cardYearlyExternalSub').innerHTML = `占比 ${yExtPct}%<br><span style="color:${fmtColor(yoyYearlyData['外部渠道'])};font-weight:600;">${fmtPct(yoyYearlyData['外部渠道'], '同比')}</span>`;
 }
 
-// ===== 场景2: 每月订单量趋势（按年对比） =====
+// ===== 场景2: 每月订单量趋势（按年对比 · 分组柱状图） =====
 function updateMonthlyChart() {
     const checked = Array.from(document.querySelectorAll('#monthlyCheckboxGroup input:checked')).map(cb => cb.value);
 
@@ -658,31 +658,34 @@ function updateMonthlyChart() {
         yearMap[y][m] = d;
     }
     const years = Object.keys(yearMap).map(Number).sort();
+    const latestYear = years[years.length - 1];
 
     const monthLabels = Array.from({ length: 12 }, (_, i) => `${i + 1}月`);
     const series = [];
     const legendData = [];
 
+    // 顺序：每个域的「今年 / 去年」相邻并排，同域同色、今年实色、去年浅色
     for (const domain of checked) {
+        const baseColor = getDomainColor(domain);
+        const label = domain === 'total' ? '整体' : domain;
         for (const year of years) {
+            const isLatest = (year === latestYear);
             const data = [];
             for (let m = 1; m <= 12; m++) {
                 const md = yearMap[year][m];
                 data.push(md ? md[domain] : null);
             }
-            const name = `${domain === 'total' ? '整体' : domain} ${year}`;
+            const name = `${label} ${year}`;
             legendData.push(name);
-            const isLatest = (year === years[years.length - 1]);
             series.push({
                 name,
-                type: 'line',
+                type: 'bar',
                 data,
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 6,
-                connectNulls: true,
-                itemStyle: { color: getDomainColor(domain) },
-                lineStyle: { width: 2, type: isLatest ? 'solid' : 'dashed' },
+                barMaxWidth: 16,
+                itemStyle: {
+                    color: baseColor,
+                    opacity: isLatest ? 1 : 0.35,   // 去年浅色，今年实色
+                },
             });
         }
     }
@@ -690,6 +693,7 @@ function updateMonthlyChart() {
     const option = {
         tooltip: {
             trigger: 'axis',
+            axisPointer: { type: 'shadow' },
             formatter: function(params) {
                 let html = params[0].name + '<br/>';
                 params.forEach(p => {
@@ -710,7 +714,6 @@ function updateMonthlyChart() {
             type: 'category',
             data: monthLabels,
             axisLabel: { fontSize: 12 },
-            boundaryGap: false,
         },
         yAxis: {
             type: 'value',
@@ -718,6 +721,8 @@ function updateMonthlyChart() {
             axisLabel: { formatter: function(v) { return formatNumber(v); } },
         },
         series: series,
+        barGap: '10%',
+        barCategoryGap: '35%',
         dataZoom: [
             { type: 'inside', start: 0, end: 100 },
             { type: 'slider', start: 0, end: 100, height: 20, bottom: 5 },
