@@ -392,7 +392,7 @@
     <!-- 每月订单量趋势（左） -->
     <div class="chart-section">
         <div class="chart-header">
-            <div class="chart-title">每月订单量趋势</div>
+            <div class="chart-title">每月订单量趋势（按年对比）</div>
             <div class="checkbox-group" id="monthlyCheckboxGroup">
                 <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
                 <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
@@ -508,6 +508,78 @@ function calcMoM(month) {
     return result;
 }
 
+// ===== 同比计算：当年截至今日 vs 去年截至同日（日对齐，按年累计） =====
+function calcYoYYearly(month) {
+    const [year, mon] = month.split('-').map(Number);
+    const curDaily = DASHBOARD_DATA.daily_data[month];
+    if (!curDaily || !curDaily.days || curDaily.days.length === 0) {
+        return { total: null, '公域': null, '私域': null, '外部渠道': null };
+    }
+    const asOfDay = curDaily.days.length; // 当月已出数据的天数 = 截至日
+    const domains = ['total', '公域', '私域', '外部渠道'];
+    const thisSum = {}, lastSum = {};
+    for (const d of domains) { thisSum[d] = 0; lastSum[d] = 0; }
+
+    // 本年 1月 ~ 当前月（当前月只取截至日）
+    for (let mm = 1; mm <= mon; mm++) {
+        const mk = `${year}-${String(mm).padStart(2, '0')}`;
+        const dd = DASHBOARD_DATA.daily_data[mk];
+        if (!dd || !dd.days || dd.days.length === 0) continue;
+        const limit = (mm === mon) ? asOfDay : dd.days.length;
+        for (const d of domains) {
+            for (let i = 0; i < limit && i < dd.days.length; i++) {
+                thisSum[d] += dd[d][i];
+            }
+        }
+    }
+    // 去年 1月 ~ 同月（同月只取截至日，与今年对齐）
+    const ly = year - 1;
+    for (let mm = 1; mm <= mon; mm++) {
+        const mk = `${ly}-${String(mm).padStart(2, '0')}`;
+        const dd = DASHBOARD_DATA.daily_data[mk];
+        if (!dd || !dd.days || dd.days.length === 0) continue;
+        const limit = (mm === mon) ? asOfDay : dd.days.length;
+        for (const d of domains) {
+            for (let i = 0; i < limit && i < dd.days.length; i++) {
+                lastSum[d] += dd[d][i];
+            }
+        }
+    }
+    const result = {};
+    for (const d of domains) {
+        result[d] = lastSum[d] > 0 ? ((thisSum[d] - lastSum[d]) / lastSum[d]) * 100 : null;
+    }
+    return result;
+}
+
+// ===== 同比计算：当月 vs 去年同月（日对齐） =====
+function calcYoYMonth(month) {
+    const [year, mon] = month.split('-').map(Number);
+    const curDaily = DASHBOARD_DATA.daily_data[month];
+    if (!curDaily || !curDaily.days || curDaily.days.length === 0) {
+        return { total: null, '公域': null, '私域': null, '外部渠道': null };
+    }
+    const dayCount = curDaily.days.length;
+    const ly = year - 1;
+    const lastMonth = `${ly}-${String(mon).padStart(2, '0')}`;
+    const lastDaily = DASHBOARD_DATA.daily_data[lastMonth];
+    const domains = ['total', '公域', '私域', '外部渠道'];
+    const curSum = {}, lastSum = {};
+    for (const d of domains) {
+        curSum[d] = curDaily[d].reduce((a, b) => a + b, 0);
+        lastSum[d] = 0;
+        if (lastDaily && lastDaily.days && lastDaily.days.length > 0) {
+            const limit = Math.min(dayCount, lastDaily.days.length);
+            for (let i = 0; i < limit; i++) lastSum[d] += lastDaily[d][i];
+        }
+    }
+    const result = {};
+    for (const d of domains) {
+        result[d] = lastSum[d] > 0 ? ((curSum[d] - lastSum[d]) / lastSum[d]) * 100 : null;
+    }
+    return result;
+}
+
 // ===== 场景1: 指标卡片 =====
 function updateCards() {
     const month = document.getElementById('cardMonthSelect').value;
@@ -527,25 +599,29 @@ function updateCards() {
 
     // 计算环比：当月截至最后一天 vs 上月同期(1日~同一天数)
     const momData = calcMoM(month);
-    const fmtPct = function(val) {
-        if (val === null) return '';
+    // 计算同比：当月 vs 去年同月
+    const yoyMonthData = calcYoYMonth(month);
+    const fmtPct = function(val, prefix) {
+        if (val === null) return '—';
         const sign = val >= 0 ? '+' : '';
-        return `环比${sign}${val.toFixed(1)}%`;
+        return `${prefix}${sign}${val.toFixed(1)}%`;
     };
     const fmtColor = function(val) {
         if (val === null) return '#aaa';
         return val >= 0 ? '#e85d6a' : '#3ba272'; // 涨红跌绿
     };
 
-    document.getElementById('cardTotalSub').innerHTML = `占比 ${pubPct}% <span style="color:${fmtColor(momData.total)};font-weight:600;">${fmtPct(momData.total)}</span>`;
-    document.getElementById('cardPublicSub').innerHTML = `占比 ${pubPct}% <span style="color:${fmtColor(momData['公域'])};font-weight:600;">${fmtPct(momData['公域'])}</span>`;
-    document.getElementById('cardPrivateSub').innerHTML = `占比 ${priPct}% <span style="color:${fmtColor(momData['私域'])};font-weight:600;">${fmtPct(momData['私域'])}</span>`;
-    document.getElementById('cardExternalSub').innerHTML = `占比 ${extPct}% <span style="color:${fmtColor(momData['外部渠道'])};font-weight:600;">${fmtPct(momData['外部渠道'])}</span>`;
+    // 当月卡片：占比 · 环比 · 同比
+    document.getElementById('cardTotalSub').innerHTML = `占比 ${pubPct}% · <span style="color:${fmtColor(momData.total)};font-weight:600;">${fmtPct(momData.total, '环比')}</span> · <span style="color:${fmtColor(yoyMonthData.total)};font-weight:600;">${fmtPct(yoyMonthData.total, '同比')}</span>`;
+    document.getElementById('cardPublicSub').innerHTML = `占比 ${pubPct}% · <span style="color:${fmtColor(momData['公域'])};font-weight:600;">${fmtPct(momData['公域'], '环比')}</span> · <span style="color:${fmtColor(yoyMonthData['公域'])};font-weight:600;">${fmtPct(yoyMonthData['公域'], '同比')}</span>`;
+    document.getElementById('cardPrivateSub').innerHTML = `占比 ${priPct}% · <span style="color:${fmtColor(momData['私域'])};font-weight:600;">${fmtPct(momData['私域'], '环比')}</span> · <span style="color:${fmtColor(yoyMonthData['私域'])};font-weight:600;">${fmtPct(yoyMonthData['私域'], '同比')}</span>`;
+    document.getElementById('cardExternalSub').innerHTML = `占比 ${extPct}% · <span style="color:${fmtColor(momData['外部渠道'])};font-weight:600;">${fmtPct(momData['外部渠道'], '环比')}</span> · <span style="color:${fmtColor(yoyMonthData['外部渠道'])};font-weight:600;">${fmtPct(yoyMonthData['外部渠道'], '同比')}</span>`;
 
-    // 年累计：从1月累加到所选月份
+    // 年累计：仅累加同年份的月份（1月~所选月），避免跨年累加
+    const [curYear] = month.split('-');
     let yearlyTotal = 0, yearlyPublic = 0, yearlyPrivate = 0, yearlyExternal = 0;
     for (const d of DASHBOARD_DATA.monthly_data) {
-        if (d.month <= month) {
+        if (d.month.startsWith(curYear + '-') && d.month <= month) {
             yearlyTotal += d.total;
             yearlyPublic += d['公域'];
             yearlyPrivate += d['私域'];
@@ -561,54 +637,80 @@ function updateCards() {
     const yPubPct = yearlyTotal > 0 ? (yearlyPublic / yearlyTotal * 100).toFixed(1) : 0;
     const yPriPct = yearlyTotal > 0 ? (yearlyPrivate / yearlyTotal * 100).toFixed(1) : 0;
     const yExtPct = yearlyTotal > 0 ? (yearlyExternal / yearlyTotal * 100).toFixed(1) : 0;
-    document.getElementById('cardYearlyTotalSub').textContent = `2026年1月~${month}累计`;
-    document.getElementById('cardYearlyPublicSub').textContent = `占比 ${yPubPct}%`;
-    document.getElementById('cardYearlyPrivateSub').textContent = `占比 ${yPriPct}%`;
-    document.getElementById('cardYearlyExternalSub').textContent = `占比 ${yExtPct}%`;
+
+    // 年累计同比：今年截至今日 vs 去年截至同日
+    const yoyYearlyData = calcYoYYearly(month);
+    document.getElementById('cardYearlyTotalSub').innerHTML = `占比 ${yPubPct}%<br><span style="color:${fmtColor(yoyYearlyData.total)};font-weight:600;">${fmtPct(yoyYearlyData.total, '同比')}</span>`;
+    document.getElementById('cardYearlyPublicSub').innerHTML = `占比 ${yPubPct}%<br><span style="color:${fmtColor(yoyYearlyData['公域'])};font-weight:600;">${fmtPct(yoyYearlyData['公域'], '同比')}</span>`;
+    document.getElementById('cardYearlyPrivateSub').innerHTML = `占比 ${yPriPct}%<br><span style="color:${fmtColor(yoyYearlyData['私域'])};font-weight:600;">${fmtPct(yoyYearlyData['私域'], '同比')}</span>`;
+    document.getElementById('cardYearlyExternalSub').innerHTML = `占比 ${yExtPct}%<br><span style="color:${fmtColor(yoyYearlyData['外部渠道'])};font-weight:600;">${fmtPct(yoyYearlyData['外部渠道'], '同比')}</span>`;
 }
 
-// ===== 场景2: 每月订单量趋势 =====
+// ===== 场景2: 每月订单量趋势（按年对比） =====
 function updateMonthlyChart() {
     const checked = Array.from(document.querySelectorAll('#monthlyCheckboxGroup input:checked')).map(cb => cb.value);
-    const months = DASHBOARD_DATA.months;
-    const monthLabels = months.map(m => m.replace('-', '年') + '月');
 
-    const series = checked.map(domain => ({
-        name: domain === 'total' ? '整体' : domain,
-        type: 'bar',
-        data: DASHBOARD_DATA.monthly_data.map(d => d[domain]),
-        itemStyle: { color: getDomainColor(domain) },
-        barGap: '10%',
-        barCategoryGap: '40%',
-    }));
+    // 按年份分组：yearMap[year][monthIndex] = 月度数据
+    const yearMap = {};
+    for (const d of DASHBOARD_DATA.monthly_data) {
+        const [y, m] = d.month.split('-').map(Number);
+        if (!yearMap[y]) yearMap[y] = {};
+        yearMap[y][m] = d;
+    }
+    const years = Object.keys(yearMap).map(Number).sort();
 
-    // 如果只选了一个，加上折线
-    if (checked.length === 1) {
-        series[0].type = 'bar';
+    const monthLabels = Array.from({ length: 12 }, (_, i) => `${i + 1}月`);
+    const series = [];
+    const legendData = [];
+
+    for (const domain of checked) {
+        for (const year of years) {
+            const data = [];
+            for (let m = 1; m <= 12; m++) {
+                const md = yearMap[year][m];
+                data.push(md ? md[domain] : null);
+            }
+            const name = `${domain === 'total' ? '整体' : domain} ${year}`;
+            legendData.push(name);
+            const isLatest = (year === years[years.length - 1]);
+            series.push({
+                name,
+                type: 'line',
+                data,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                connectNulls: true,
+                itemStyle: { color: getDomainColor(domain) },
+                lineStyle: { width: 2, type: isLatest ? 'solid' : 'dashed' },
+            });
+        }
     }
 
     const option = {
         tooltip: {
             trigger: 'axis',
-            axisPointer: { type: 'shadow' },
             formatter: function(params) {
                 let html = params[0].name + '<br/>';
                 params.forEach(p => {
-                    html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
+                    if (p.value !== null && p.value !== undefined) {
+                        html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
+                    }
                 });
                 return html;
             }
         },
         legend: {
-            data: checked.map(d => d === 'total' ? '整体' : d),
+            data: legendData,
             top: 0,
-            right: 0,
+            type: 'scroll',
         },
-        grid: { left: 60, right: 30, top: 40, bottom: 40 },
+        grid: { left: 60, right: 30, top: 50, bottom: 50 },
         xAxis: {
             type: 'category',
             data: monthLabels,
             axisLabel: { fontSize: 12 },
+            boundaryGap: false,
         },
         yAxis: {
             type: 'value',

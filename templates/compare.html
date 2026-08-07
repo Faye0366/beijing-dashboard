@@ -136,6 +136,12 @@
             background: #5568d3;
         }
 
+        .yoy-hint {
+            color: #888;
+            font-size: 12px;
+            align-self: center;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -414,6 +420,7 @@
         <div class="mode-toggle">
             <button id="modeMonth" class="active" onclick="switchMode('month')">按月对比</button>
             <button id="modeDate" onclick="switchMode('date')">自定义日期</button>
+            <button id="modeYoy" onclick="switchMode('yoy')">同比对比</button>
         </div>
     </div>
 
@@ -445,6 +452,18 @@
             <input type="date" id="dateBEnd">
         </div>
         <button class="btn-compare" onclick="runCompare()">开始对比</button>
+    </div>
+
+    <!-- 同比对比模式 -->
+    <div class="control-row hidden" id="yoyMode">
+        <div class="range-group">
+            <label>对比时段（今年）：</label>
+            <input type="date" id="yoyStart">
+            <span class="separator">~</span>
+            <input type="date" id="yoyEnd">
+        </div>
+        <span class="yoy-hint">时段A将自动设为去年同期，点击对比即可看同比</span>
+        <button class="btn-compare" onclick="runYoYCompare()">开始同比对比</button>
     </div>
 </div>
 
@@ -583,17 +602,18 @@ function pctClass(val) {
 
 // ===== 模式切换 =====
 function switchMode(mode) {
-    if (mode === 'month') {
-        document.getElementById('modeMonth').classList.add('active');
-        document.getElementById('modeDate').classList.remove('active');
-        document.getElementById('monthMode').classList.remove('hidden');
-        document.getElementById('dateMode').classList.add('hidden');
-    } else {
-        document.getElementById('modeMonth').classList.remove('active');
-        document.getElementById('modeDate').classList.add('active');
-        document.getElementById('monthMode').classList.add('hidden');
-        document.getElementById('dateMode').classList.remove('hidden');
-    }
+    const modes = ['month', 'date', 'yoy'];
+    modes.forEach(m => {
+        const btn = document.getElementById('mode' + m.charAt(0).toUpperCase() + m.slice(1));
+        const panel = document.getElementById(m + 'Mode');
+        if (m === mode) {
+            btn.classList.add('active');
+            panel.classList.remove('hidden');
+        } else {
+            btn.classList.remove('active');
+            panel.classList.add('hidden');
+        }
+    });
 }
 
 // ===== 获取日期范围内的日期列表 =====
@@ -660,42 +680,8 @@ function productTotal(aggData, product) {
     return sum;
 }
 
-// ===== 执行对比 =====
-function runCompare() {
-    let datesA, datesB, labelA, labelB;
-
-    if (!document.getElementById('dateMode').classList.contains('hidden')) {
-        // 自定义日期模式
-        const aStart = document.getElementById('dateAStart').value;
-        const aEnd = document.getElementById('dateAEnd').value;
-        const bStart = document.getElementById('dateBStart').value;
-        const bEnd = document.getElementById('dateBEnd').value;
-        if (!aStart || !aEnd || !bStart || !bEnd) {
-            alert('请选择完整的日期范围');
-            return;
-        }
-        if (aStart > aEnd || bStart > bEnd) {
-            alert('日期范围有误：起始日期不能晚于结束日期');
-            return;
-        }
-        datesA = getDatesInRange(aStart, aEnd);
-        datesB = getDatesInRange(bStart, bEnd);
-        labelA = aStart + ' ~ ' + aEnd;
-        labelB = bStart + ' ~ ' + bEnd;
-    } else {
-        // 按月模式
-        const monthA = document.getElementById('monthA').value;
-        const monthB = document.getElementById('monthB').value;
-        if (!monthA || !monthB) {
-            alert('请选择月份');
-            return;
-        }
-        datesA = getMonthDates(monthA);
-        datesB = getMonthDates(monthB);
-        labelA = monthA.replace('-', '年') + '月';
-        labelB = monthB.replace('-', '年') + '月';
-    }
-
+// ===== 执行对比（共用渲染逻辑） =====
+function executeCompare(datesA, datesB, labelA, labelB) {
     currentRangeA = { dates: datesA, label: labelA };
     currentRangeB = { dates: datesB, label: labelB };
 
@@ -747,6 +733,70 @@ function runCompare() {
     renderChannelPublicTable(datesA, datesB);
     renderChannelPrivateTable(datesA, datesB);
     renderCllTopTable(datesA, datesB);
+}
+
+// ===== 执行对比（按月 / 自定义日期） =====
+function runCompare() {
+    let datesA, datesB, labelA, labelB;
+
+    if (!document.getElementById('dateMode').classList.contains('hidden')) {
+        // 自定义日期模式
+        const aStart = document.getElementById('dateAStart').value;
+        const aEnd = document.getElementById('dateAEnd').value;
+        const bStart = document.getElementById('dateBStart').value;
+        const bEnd = document.getElementById('dateBEnd').value;
+        if (!aStart || !aEnd || !bStart || !bEnd) {
+            alert('请选择完整的日期范围');
+            return;
+        }
+        if (aStart > aEnd || bStart > bEnd) {
+            alert('日期范围有误：起始日期不能晚于结束日期');
+            return;
+        }
+        datesA = getDatesInRange(aStart, aEnd);
+        datesB = getDatesInRange(bStart, bEnd);
+        labelA = aStart + ' ~ ' + aEnd;
+        labelB = bStart + ' ~ ' + bEnd;
+    } else {
+        // 按月模式
+        const monthA = document.getElementById('monthA').value;
+        const monthB = document.getElementById('monthB').value;
+        if (!monthA || !monthB) {
+            alert('请选择月份');
+            return;
+        }
+        datesA = getMonthDates(monthA);
+        datesB = getMonthDates(monthB);
+        labelA = monthA.replace('-', '年') + '月';
+        labelB = monthB.replace('-', '年') + '月';
+    }
+
+    executeCompare(datesA, datesB, labelA, labelB);
+}
+
+// ===== 同比对比：时段B=今年所选范围，时段A=去年同期 =====
+function runYoYCompare() {
+    const start = document.getElementById('yoyStart').value;
+    const end = document.getElementById('yoyEnd').value;
+    if (!start || !end) {
+        alert('请选择对比时段（今年）');
+        return;
+    }
+    if (start > end) {
+        alert('日期范围有误：起始日期不能晚于结束日期');
+        return;
+    }
+    const [sy, sm, sd] = start.split('-').map(Number);
+    const [ey, em, ed] = end.split('-').map(Number);
+    const aStart = `${sy - 1}-${String(sm).padStart(2, '0')}-${String(sd).padStart(2, '0')}`;
+    const aEnd = `${ey - 1}-${String(em).padStart(2, '0')}-${String(ed).padStart(2, '0')}`;
+
+    const datesB = getDatesInRange(start, end);
+    const datesA = getDatesInRange(aStart, aEnd);
+    const labelB = `${start} ~ ${end}（今年）`;
+    const labelA = `${aStart} ~ ${aEnd}（去年）`;
+
+    executeCompare(datesA, datesB, labelA, labelB);
 }
 
 // ===== 渲染汇总 =====
@@ -1340,6 +1390,15 @@ function init() {
             document.getElementById('dateBStart').value = curMonth + '-01';
             document.getElementById('dateBEnd').value = maxDate;
         }
+        // 同比模式默认：今年1月1日 ~ 当前最新日期（全年累计同比）
+        const latestYearYoy = maxDate.split('-')[0];
+        ['yoyStart', 'yoyEnd'].forEach(id => {
+            const el = document.getElementById(id);
+            el.min = minDate;
+            el.max = maxDate;
+        });
+        document.getElementById('yoyStart').value = latestYearYoy + '-01-01';
+        document.getElementById('yoyEnd').value = maxDate;
     }
 
     // 自动执行一次对比
