@@ -449,6 +449,24 @@
     </table>
 </div>
 
+<!-- ===== 公私域单量对比 ===== -->
+<div class="table-section">
+    <div class="table-title">公私域单量对比（点击域可展开查看该域下各产品单量对比）</div>
+    <table class="compare-table">
+        <thead>
+            <tr>
+                <th>域 / 产品</th>
+                <th>时段A单量</th>
+                <th>时段B单量</th>
+                <th>差值</th>
+                <th>涨跌幅</th>
+                <th>趋势</th>
+            </tr>
+        </thead>
+        <tbody id="domainTbody"></tbody>
+    </table>
+</div>
+
 <script>
 // ===== 数据会被嵌入这里 =====
 // ${DATA_PLACEHOLDER}
@@ -624,6 +642,7 @@ function executeCompare(datesA, datesB, labelA, labelB) {
     renderSummary(labelA, labelB, compareList);
     renderProductTable(compareList);
     renderBizTable(datesA, datesB);
+    renderDomainTable(aggA, aggB);
 }
 
 // ===== 执行对比（按月 / 自定义日期） =====
@@ -846,6 +865,118 @@ function renderBizTable(datesA, datesB) {
     }
 
     tbody.innerHTML = html;
+}
+
+// ===== 聚合：某域下各产品单量（agg: product->domain->channel） =====
+function extractDomainProducts(agg, domain) {
+    const result = {};
+    for (const [product, domains] of Object.entries(agg)) {
+        if (domains[domain]) {
+            let sum = 0;
+            for (const count of Object.values(domains[domain])) sum += count;
+            if (sum > 0) result[product] = (result[product] || 0) + sum;
+        }
+    }
+    return result;
+}
+
+// 构建公域/私域两个域的对比数据
+function buildDomainCompare(aggA, aggB) {
+    const domains = ['公域', '私域'];
+    const sumObj = o => Object.values(o).reduce((s, v) => s + v, 0);
+    const out = [];
+    for (const dom of domains) {
+        const pa = extractDomainProducts(aggA, dom);
+        const pb = extractDomainProducts(aggB, dom);
+        const allProducts = new Set([...Object.keys(pa), ...Object.keys(pb)]);
+        const products = [];
+        for (const p of allProducts) {
+            const a = pa[p] || 0;
+            const b = pb[p] || 0;
+            products.push({ product: p, totalA: a, totalB: b, diff: b - a, pct: a > 0 ? ((b - a) / a) * 100 : null });
+        }
+        products.sort((x, y) => y.totalB - x.totalB);
+        const totalA = sumObj(pa);
+        const totalB = sumObj(pb);
+        out.push({
+            domain: dom,
+            products,
+            totalA,
+            totalB,
+            diff: totalB - totalA,
+            pct: totalA > 0 ? ((totalB - totalA) / totalA) * 100 : null
+        });
+    }
+    return out;
+}
+
+// ===== 渲染公私域对比表格（域可展开 -> 各产品） =====
+function renderDomainTable(aggA, aggB) {
+    const tbody = document.getElementById('domainTbody');
+    const domains = buildDomainCompare(aggA, aggB);
+    const maxDomDiff = Math.max(1, ...domains.map(d => Math.abs(d.diff)));
+    let html = '';
+
+    for (const dom of domains) {
+        const safeId = dom.domain === '公域' ? 'gongyu' : 'siyu';
+        const domDiffStr = (dom.diff >= 0 ? '+' : '') + formatNumber(dom.diff);
+        const domPctStr = dom.pct !== null ? formatPct(dom.pct) : '';
+        const domBarWidth = Math.max(2, (Math.abs(dom.diff) / maxDomDiff) * 100);
+        const domBarClass = dom.diff >= 0 ? 'up' : 'down';
+
+        html += `<tr class="product-row" onclick="toggleDomainDetail('${dom.domain}')" id="domain-row-${safeId}">
+            <td><span class="arrow-icon">▶</span> <span class="domain-tag ${dom.domain}">${dom.domain}</span> 合计</td>
+            <td>${formatNumber(dom.totalA)}</td>
+            <td>${formatNumber(dom.totalB)}</td>
+            <td class="${diffClass(dom.diff)}">${domDiffStr}</td>
+            <td class="${pctClass(dom.pct)}">${domPctStr}</td>
+            <td><div class="trend-container"><div class="trend-bar ${domBarClass}" style="width:${domBarWidth}px;"></div></div></td>
+        </tr>`;
+
+        const maxProdDiff = Math.max(1, ...dom.products.map(p => Math.abs(p.diff)));
+        let detailHtml = `<table class="detail-table"><thead><tr>
+            <th>产品名称</th><th>时段A单量</th><th>时段B单量</th><th>差值</th><th>涨跌幅</th><th>趋势</th>
+        </tr></thead><tbody>`;
+        for (const p of dom.products) {
+            const diffStr = (p.diff >= 0 ? '+' : '') + formatNumber(p.diff);
+            const pctStr = p.pct !== null ? formatPct(p.pct) : '';
+            const tag = p.totalA === 0 && p.totalB > 0 ? '<span class="tag-new">新增</span>' :
+                        p.totalB === 0 && p.totalA > 0 ? '<span class="tag-gone">消失</span>' : '';
+            const barWidth = Math.max(2, (Math.abs(p.diff) / maxProdDiff) * 100);
+            const barClass = p.diff >= 0 ? 'up' : 'down';
+            detailHtml += `<tr>
+                <td>${p.product}</td>
+                <td>${formatNumber(p.totalA)}</td>
+                <td>${formatNumber(p.totalB)}</td>
+                <td class="${diffClass(p.diff)}">${diffStr}</td>
+                <td class="${pctClass(p.pct)}">${pctStr} ${tag}</td>
+                <td><div class="trend-container"><div class="trend-bar ${barClass}" style="width:${barWidth}px;"></div></div></td>
+            </tr>`;
+        }
+        detailHtml += '</tbody></table>';
+
+        html += `<tr class="detail-row hidden" id="domain-detail-${safeId}">
+            <td colspan="6"><div class="detail-inner">${detailHtml}</div></td>
+        </tr>`;
+    }
+
+    tbody.innerHTML = html;
+}
+
+// ===== 展开/折叠公私域明细 =====
+function toggleDomainDetail(domain) {
+    const safeId = domain === '公域' ? 'gongyu' : 'siyu';
+    const detailRow = document.getElementById('domain-detail-' + safeId);
+    const row = document.getElementById('domain-row-' + safeId);
+    if (!detailRow || !row) return;
+    const isHidden = detailRow.classList.contains('hidden');
+    if (isHidden) {
+        detailRow.classList.remove('hidden');
+        row.classList.add('expanded');
+    } else {
+        detailRow.classList.add('hidden');
+        row.classList.remove('expanded');
+    }
 }
 
 // ===== 展开/折叠明细 =====
