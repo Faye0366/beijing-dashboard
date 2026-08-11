@@ -63,21 +63,24 @@
         }
 
         .metric-card .label {
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
             margin-bottom: 1px;
+            order: 2;
         }
 
         .metric-card .value {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 700;
             line-height: 1.15;
+            order: 1;
         }
 
         .metric-card .sub {
             font-size: 10px;
             color: #aaa;
             margin-top: 1px;
+            order: 3;
         }
 
         .metric-card.total .value { color: #667eea; }
@@ -640,10 +643,10 @@ function updateCards() {
 
     // 年累计同比：今年截至今日 vs 去年截至同日
     const yoyYearlyData = calcYoYYearly(month);
-    document.getElementById('cardYearlyTotalSub').innerHTML = `占比 ${yPubPct}%<br><span style="color:${fmtColor(yoyYearlyData.total)};font-weight:600;">${fmtPct(yoyYearlyData.total, '同比')}</span>`;
-    document.getElementById('cardYearlyPublicSub').innerHTML = `占比 ${yPubPct}%<br><span style="color:${fmtColor(yoyYearlyData['公域'])};font-weight:600;">${fmtPct(yoyYearlyData['公域'], '同比')}</span>`;
-    document.getElementById('cardYearlyPrivateSub').innerHTML = `占比 ${yPriPct}%<br><span style="color:${fmtColor(yoyYearlyData['私域'])};font-weight:600;">${fmtPct(yoyYearlyData['私域'], '同比')}</span>`;
-    document.getElementById('cardYearlyExternalSub').innerHTML = `占比 ${yExtPct}%<br><span style="color:${fmtColor(yoyYearlyData['外部渠道'])};font-weight:600;">${fmtPct(yoyYearlyData['外部渠道'], '同比')}</span>`;
+    document.getElementById('cardYearlyTotalSub').innerHTML = `累计至 ${month} · <span style="color:${fmtColor(yoyYearlyData.total)};font-weight:600;">${fmtPct(yoyYearlyData.total, '同比')}</span>`;
+    document.getElementById('cardYearlyPublicSub').innerHTML = `占比 ${yPubPct}% · <span style="color:${fmtColor(yoyYearlyData['公域'])};font-weight:600;">${fmtPct(yoyYearlyData['公域'], '同比')}</span>`;
+    document.getElementById('cardYearlyPrivateSub').innerHTML = `占比 ${yPriPct}% · <span style="color:${fmtColor(yoyYearlyData['私域'])};font-weight:600;">${fmtPct(yoyYearlyData['私域'], '同比')}</span>`;
+    document.getElementById('cardYearlyExternalSub').innerHTML = `占比 ${yExtPct}% · <span style="color:${fmtColor(yoyYearlyData['外部渠道'])};font-weight:600;">${fmtPct(yoyYearlyData['外部渠道'], '同比')}</span>`;
 }
 
 // ===== 场景2: 每月订单量趋势（按年对比 · 分组柱状图） =====
