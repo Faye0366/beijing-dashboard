@@ -99,19 +99,15 @@
 
         .cards-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 10px;
         }
 
-        /* 年累计：紫色左边框 */
+        /* 年累计：紫色左边框（第一行，含业务类型） */
         .metric-card.yearly {
             border-left: 3px solid #9c27b0;
         }
-        /* 当月：蓝色左边框 */
-        .metric-card:not(.yearly):not(.biz) {
-            border-left: 3px solid #667eea;
-        }
-
+        .metric-card.yearly .value { color: #9c27b0; }
         .metric-card.yearly .label::before {
             content: "年累计 · ";
             font-size: 12px;
@@ -119,19 +115,24 @@
             font-weight: 600;
         }
 
-        .metric-card:not(.yearly):not(.biz) .label::before {
+        /* 当月总量（整体/公域/私域）：蓝色左边框 */
+        .metric-card.current {
+            border-left: 3px solid #667eea;
+        }
+        .metric-card.current .value { color: #667eea; }
+        .metric-card.current .label::before {
             content: "当月 · ";
             font-size: 12px;
             color: #667eea;
             font-weight: 600;
         }
 
-        /* 业务类型卡片：橙色主题 */
-        .metric-card.biz {
+        /* 业务类型卡片（当月）：橙色主题 */
+        .metric-card.biz:not(.yearly) {
             border-left: 3px solid #ff9800;
         }
-        .metric-card.biz .value { color: #ff7043; }
-        .metric-card.biz .label::before {
+        .metric-card.biz:not(.yearly) .value { color: #ff7043; }
+        .metric-card.biz:not(.yearly) .label::before {
             content: "业务 · ";
             font-size: 12px;
             color: #ff9800;
@@ -321,7 +322,7 @@
         /* ===== 响应式 ===== */
         @media (max-width: 1200px) {
             .cards-row {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
             }
             .charts-row.three-col {
                 grid-template-columns: 1fr;
@@ -357,9 +358,9 @@
     </div>
 </div>
 
-<!-- ===== 订单量概览卡片（年累计 + 当月，各一行3张） ===== -->
+<!-- ===== 订单量概览卡片（两行六列：年累计 / 当月 × 整体·公域·私域·新装·续费·提速） ===== -->
 <div class="cards-section" id="cardsSection">
-    <div class="section-title">订单量概览（年累计 / 当月）</div>
+    <div class="section-title">年累计订单量（整体 / 公域 / 私域 / 新装 / 续费 / 提速）</div>
     <div class="cards-row">
         <div class="metric-card yearly total">
             <div class="label">整体</div>
@@ -376,28 +377,42 @@
             <div class="value" id="cardYearlyPrivate">0</div>
             <div class="sub" id="cardYearlyPrivateSub"></div>
         </div>
-        <div class="metric-card total">
-            <div class="label">整体</div>
-            <div class="value" id="cardTotal">0</div>
-            <div class="sub" id="cardTotalSub"></div>
+        <div class="metric-card yearly biz biz-new">
+            <div class="label">宽带新装</div>
+            <div class="value" id="cardYearlyBizNew">0</div>
+            <div class="sub" id="cardYearlyBizNewSub"></div>
         </div>
-        <div class="metric-card public">
-            <div class="label">公域</div>
-            <div class="value" id="cardPublic">0</div>
-            <div class="sub" id="cardPublicSub"></div>
+        <div class="metric-card yearly biz biz-renew">
+            <div class="label">宽带续费</div>
+            <div class="value" id="cardYearlyBizRenew">0</div>
+            <div class="sub" id="cardYearlyBizRenewSub"></div>
         </div>
-        <div class="metric-card private">
-            <div class="label">私域</div>
-            <div class="value" id="cardPrivate">0</div>
-            <div class="sub" id="cardPrivateSub"></div>
+        <div class="metric-card yearly biz biz-up">
+            <div class="label">宽带提速</div>
+            <div class="value" id="cardYearlyBizUp">0</div>
+            <div class="sub" id="cardYearlyBizUpSub"></div>
         </div>
     </div>
 </div>
 
-<!-- ===== 业务类型概览卡片（当月） ===== -->
 <div class="cards-section">
-    <div class="section-title">业务类型概览（当月）</div>
+    <div class="section-title">当月累计订单量（整体 / 公域 / 私域 / 新装 / 续费 / 提速）</div>
     <div class="cards-row">
+        <div class="metric-card current total">
+            <div class="label">整体</div>
+            <div class="value" id="cardTotal">0</div>
+            <div class="sub" id="cardTotalSub"></div>
+        </div>
+        <div class="metric-card current public">
+            <div class="label">公域</div>
+            <div class="value" id="cardPublic">0</div>
+            <div class="sub" id="cardPublicSub"></div>
+        </div>
+        <div class="metric-card current private">
+            <div class="label">私域</div>
+            <div class="value" id="cardPrivate">0</div>
+            <div class="sub" id="cardPrivateSub"></div>
+        </div>
         <div class="metric-card biz biz-new">
             <div class="label">宽带新装</div>
             <div class="value" id="cardBizNew">0</div>
@@ -631,6 +646,34 @@ function calcBizYoY(biz, month) {
     return lv > 0 ? ((cur - lv) / lv) * 100 : null;
 }
 
+// ===== 年累计业务类型（按所选月份当年 1月~所选月 累加） =====
+function getYearlyBiz(month) {
+    const [curYear] = month.split('-');
+    const sum = { '宽带新装': 0, '宽带续费': 0, '宽带提速': 0 };
+    for (const d of DASHBOARD_DATA.monthly_data) {
+        if (d.month.startsWith(curYear + '-') && d.month <= month) {
+            const b = DASHBOARD_DATA.biz_monthly[d.month] || {};
+            sum['宽带新装'] += b['宽带新装'] || 0;
+            sum['宽带续费'] += b['宽带续费'] || 0;
+            sum['宽带提速'] += b['宽带提速'] || 0;
+        }
+    }
+    return sum;
+}
+
+// ===== 年累计业务类型同比（当年 1月~所选月 对比 去年同期） =====
+function calcBizYoYYearly(biz, month) {
+    const [curYear, curMo] = month.split('-').map(Number);
+    let cur = 0, last = 0;
+    for (let mm = 1; mm <= curMo; mm++) {
+        const mk = `${curYear}-${String(mm).padStart(2, '0')}`;
+        cur += (DASHBOARD_DATA.biz_monthly[mk] || {})[biz] || 0;
+        const lyMk = `${curYear - 1}-${String(mm).padStart(2, '0')}`;
+        last += (DASHBOARD_DATA.biz_monthly[lyMk] || {})[biz] || 0;
+    }
+    return last > 0 ? ((cur - last) / last) * 100 : null;
+}
+
 // ===== 场景1: 指标卡片 =====
 function updateCards() {
     const month = document.getElementById('cardMonthSelect').value;
@@ -674,6 +717,17 @@ function updateCards() {
     document.getElementById('cardYearlyTotalSub').innerHTML = `累计至 ${month} · ${colorSpan(fmtPct(yoyYearlyData.total, '同比'), yoyYearlyData.total)}`;
     document.getElementById('cardYearlyPublicSub').innerHTML = `占比 ${yPubPct}% · ${colorSpan(fmtPct(yoyYearlyData['公域'], '同比'), yoyYearlyData['公域'])}`;
     document.getElementById('cardYearlyPrivateSub').innerHTML = `占比 ${yPriPct}% · ${colorSpan(fmtPct(yoyYearlyData['私域'], '同比'), yoyYearlyData['私域'])}`;
+
+    // 业务类型年累计卡片（第一行）
+    const yearlyBiz = getYearlyBiz(month);
+    for (const b of BIZ_TYPES) {
+        const key = bizKey(b);
+        const val = yearlyBiz[b] || 0;
+        const pct = yearlyTotal > 0 ? (val / yearlyTotal * 100).toFixed(1) : 0;
+        const yoyB = calcBizYoYYearly(b, month);
+        document.getElementById('cardYearlyBiz' + key).textContent = formatNumber(val);
+        document.getElementById('cardYearlyBiz' + key + 'Sub').innerHTML = `占比 ${pct}% · ${colorSpan(fmtPct(yoyB, '同比'), yoyB)}`;
+    }
 
     // 业务类型卡片（当月）
     const biz = getBiz(month) || {};
