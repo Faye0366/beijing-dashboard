@@ -433,7 +433,7 @@
 
 <!-- ===== 业务类型单量对比 ===== -->
 <div class="table-section">
-    <div class="table-title">业务类型单量对比（宽带新装 / 续费 / 提速，按时段B单量排序）</div>
+    <div class="table-title">业务类型单量对比（宽带新装 / 续费 / 提速，按时段B单量排序，点击业务可展开公域/私域对比）</div>
     <table class="compare-table">
         <thead>
             <tr>
@@ -842,7 +842,8 @@ function renderBizTable(datesA, datesB) {
     let html = '';
     const maxAbsDiff = list.length > 0 ? Math.max(...list.map(i => Math.abs(i.diff)), 1) : 1;
 
-    for (const item of list) {
+    for (let i = 0; i < list.length; i++) {
+        const item = list[i];
         const diffStr = (item.diff >= 0 ? '+' : '') + formatNumber(item.diff);
         const pctStr = item.pct !== null ? formatPct(item.pct) : '';
         const tag = item.totalA === 0 && item.totalB > 0 ? '<span class="tag-new">新增</span>' :
@@ -850,8 +851,8 @@ function renderBizTable(datesA, datesB) {
         const barWidth = Math.max(2, (Math.abs(item.diff) / maxAbsDiff) * 100);
         const barClass = item.diff >= 0 ? 'up' : 'down';
 
-        html += `<tr>
-            <td>${item.product}</td>
+        html += `<tr class="product-row" onclick="toggleBizDetail(${i})" id="biz-row-${i}">
+            <td><span class="arrow-icon">▶</span> ${item.product}</td>
             <td>${formatNumber(item.totalA)}</td>
             <td>${formatNumber(item.totalB)}</td>
             <td class="${diffClass(item.diff)}">${diffStr}</td>
@@ -862,9 +863,50 @@ function renderBizTable(datesA, datesB) {
                 </div>
             </td>
         </tr>`;
+
+        // 展开：该业务在公域 / 私域的单量对比
+        const domains = ['公域', '私域'];
+        let detailHtml = `<table class="detail-table"><thead><tr>
+            <th>域</th><th>时段A单量</th><th>时段B单量</th><th>差值</th><th>涨跌幅</th>
+        </tr></thead><tbody>`;
+        for (const dom of domains) {
+            const va = (aggA[item.product] || {})[dom] || 0;
+            const vb = (aggB[item.product] || {})[dom] || 0;
+            const dDiff = vb - va;
+            const dPct = va > 0 ? ((vb - va) / va) * 100 : null;
+            const dDiffStr = (dDiff >= 0 ? '+' : '') + formatNumber(dDiff);
+            const dPctStr = dPct !== null ? formatPct(dPct) : '';
+            detailHtml += `<tr>
+                <td><span class="domain-tag ${dom}">${dom}</span></td>
+                <td>${formatNumber(va)}</td>
+                <td>${formatNumber(vb)}</td>
+                <td class="${diffClass(dDiff)}">${dDiffStr}</td>
+                <td class="${pctClass(dPct)}">${dPctStr}</td>
+            </tr>`;
+        }
+        detailHtml += '</tbody></table>';
+
+        html += `<tr class="detail-row hidden" id="biz-detail-${i}">
+            <td colspan="6"><div class="detail-inner">${detailHtml}</div></td>
+        </tr>`;
     }
 
     tbody.innerHTML = html;
+}
+
+// ===== 展开/折叠业务类型明细（公域 / 私域） =====
+function toggleBizDetail(index) {
+    const detailRow = document.getElementById('biz-detail-' + index);
+    const row = document.getElementById('biz-row-' + index);
+    if (!detailRow || !row) return;
+    const isHidden = detailRow.classList.contains('hidden');
+    if (isHidden) {
+        detailRow.classList.remove('hidden');
+        row.classList.add('expanded');
+    } else {
+        detailRow.classList.add('hidden');
+        row.classList.remove('expanded');
+    }
 }
 
 // ===== 聚合：某域下各产品单量（agg: product->domain->channel） =====
