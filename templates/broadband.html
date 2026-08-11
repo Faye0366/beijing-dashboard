@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>流量套餐订单数据看板</title>
+    <title>北京移动宽带业务数据看板</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         * {
@@ -20,7 +20,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff9800 0%, #f56c6c 100%);
             color: #fff;
             padding: 24px 32px;
             border-radius: 12px;
@@ -28,7 +28,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
         }
 
         .header h1 {
@@ -88,12 +88,7 @@
         .metric-card.total .value { color: #667eea; }
         .metric-card.public .value { color: #e85d6a; }
         .metric-card.private .value { color: #3ba272; }
-        .metric-card.external .value { color: #fac858; }
         .metric-card.yearly .value { color: #9c27b0; }
-
-        .cards-section {
-            margin-bottom: 20px;
-        }
 
         .section-title {
             font-size: 14px;
@@ -104,15 +99,16 @@
 
         .cards-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
 
+        /* 年累计：紫色左边框 */
         .metric-card.yearly {
             border-left: 3px solid #9c27b0;
         }
-
-        .metric-card:not(.yearly) {
+        /* 当月：蓝色左边框 */
+        .metric-card:not(.yearly):not(.biz) {
             border-left: 3px solid #667eea;
         }
 
@@ -123,10 +119,22 @@
             font-weight: 600;
         }
 
-        .metric-card:not(.yearly) .label::before {
+        .metric-card:not(.yearly):not(.biz) .label::before {
             content: "当月 · ";
             font-size: 12px;
             color: #667eea;
+            font-weight: 600;
+        }
+
+        /* 业务类型卡片：橙色主题 */
+        .metric-card.biz {
+            border-left: 3px solid #ff9800;
+        }
+        .metric-card.biz .value { color: #ff7043; }
+        .metric-card.biz .label::before {
+            content: "业务 · ";
+            font-size: 12px;
+            color: #ff9800;
             font-weight: 600;
         }
 
@@ -172,6 +180,10 @@
             margin-bottom: 20px;
         }
 
+        .charts-row.three-col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
         .chart-header {
             display: flex;
             justify-content: space-between;
@@ -205,7 +217,7 @@
         }
 
         .chart-controls select:focus {
-            border-color: #667eea;
+            border-color: #ff9800;
         }
 
         .checkbox-group {
@@ -226,16 +238,12 @@
 
         .checkbox-item input[type="checkbox"] {
             cursor: pointer;
-            accent-color: #667eea;
+            accent-color: #ff9800;
         }
 
         .chart-container {
             width: 100%;
-            height: 190px;
-        }
-
-        .chart-container.tall {
-            height: 225px;
+            height: 240px;
         }
 
         /* ===== TOP5 产品表格 ===== */
@@ -272,8 +280,6 @@
 
         .top-product-table tbody td:first-child {
             text-align: left;
-            font-weight: 600;
-            color: #333;
         }
 
         .top-product-table tbody tr:hover {
@@ -290,7 +296,7 @@
             font-weight: 700;
             color: #fff;
             text-align: center;
-            margin-right: 2px;
+            margin-right: 6px;
         }
 
         .top-product-table .rank-1 { background: #e85d6a; }
@@ -302,11 +308,14 @@
         .top-product-table .product-name {
             display: inline-block;
             vertical-align: middle;
+            text-align: left;
+            max-width: 280px;
         }
 
         .top-product-table .no-data {
             color: #ccc;
             text-align: center;
+            padding: 20px;
         }
 
         /* ===== 响应式 ===== */
@@ -314,16 +323,19 @@
             .cards-row {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .charts-row.three-col {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 768px) {
-            .cards-section {
-                grid-template-columns: 1fr;
-            }
             .cards-row {
                 grid-template-columns: repeat(2, 1fr);
             }
             .charts-row {
+                grid-template-columns: 1fr;
+            }
+            .charts-row.three-col {
                 grid-template-columns: 1fr;
             }
             .header {
@@ -336,17 +348,16 @@
 <body>
 
 <div class="header">
-    <h1>北京移动流量套餐订单数据看板</h1>
+    <h1>北京移动宽带业务数据看板</h1>
     <div class="month-selector">
         <label>当前月份：</label>
         <select id="cardMonthSelect"></select>
         <span class="update-time" id="updateTime"></span>
-        <a href="compare.html" style="margin-left:16px;padding:6px 18px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">数据对比分析 →</a>
-        <a href="broadband.html" style="margin-left:8px;padding:6px 18px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#ffd9b3;text-decoration:none;font-size:14px;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">宽带业务看板 →</a>
+        <a href="broadband_compare.html" style="margin-left:16px;padding:6px 18px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">数据对比分析 →</a>
     </div>
 </div>
 
-<!-- ===== 订单量卡片（年累计 + 当月，同一行） ===== -->
+<!-- ===== 订单量概览卡片（年累计 + 当月，各一行3张） ===== -->
 <div class="cards-section" id="cardsSection">
     <div class="section-title">订单量概览（年累计 / 当月）</div>
     <div class="cards-row">
@@ -365,11 +376,6 @@
             <div class="value" id="cardYearlyPrivate">0</div>
             <div class="sub" id="cardYearlyPrivateSub"></div>
         </div>
-        <div class="metric-card yearly external">
-            <div class="label">外部渠道</div>
-            <div class="value" id="cardYearlyExternal">0</div>
-            <div class="sub" id="cardYearlyExternalSub"></div>
-        </div>
         <div class="metric-card total">
             <div class="label">整体</div>
             <div class="value" id="cardTotal">0</div>
@@ -385,17 +391,33 @@
             <div class="value" id="cardPrivate">0</div>
             <div class="sub" id="cardPrivateSub"></div>
         </div>
-        <div class="metric-card external">
-            <div class="label">外部渠道</div>
-            <div class="value" id="cardExternal">0</div>
-            <div class="sub" id="cardExternalSub"></div>
+    </div>
+</div>
+
+<!-- ===== 业务类型概览卡片（当月） ===== -->
+<div class="cards-section">
+    <div class="section-title">业务类型概览（当月）</div>
+    <div class="cards-row">
+        <div class="metric-card biz biz-new">
+            <div class="label">宽带新装</div>
+            <div class="value" id="cardBizNew">0</div>
+            <div class="sub" id="cardBizNewSub"></div>
+        </div>
+        <div class="metric-card biz biz-renew">
+            <div class="label">宽带续费</div>
+            <div class="value" id="cardBizRenew">0</div>
+            <div class="sub" id="cardBizRenewSub"></div>
+        </div>
+        <div class="metric-card biz biz-up">
+            <div class="label">宽带提速</div>
+            <div class="value" id="cardBizUp">0</div>
+            <div class="sub" id="cardBizUpSub"></div>
         </div>
     </div>
 </div>
 
-<!-- ===== 场景2&3: 每月订单量趋势 + 日订单量趋势（左右排列）===== -->
+<!-- ===== 每月趋势 + 每日趋势 ===== -->
 <div class="charts-row">
-    <!-- 每月订单量趋势（左） -->
     <div class="chart-section">
         <div class="chart-header">
             <div class="chart-title">每月订单量趋势（按年对比）</div>
@@ -403,13 +425,11 @@
                 <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
                 <label class="checkbox-item"><input type="checkbox" value="公域"> 公域</label>
                 <label class="checkbox-item"><input type="checkbox" value="私域"> 私域</label>
-                <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
             </div>
         </div>
         <div class="chart-container" id="monthlyChart"></div>
     </div>
 
-    <!-- 日订单量趋势（右） -->
     <div class="chart-section">
         <div class="chart-header">
             <div class="chart-title">日订单量趋势</div>
@@ -417,32 +437,48 @@
                 <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
                 <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
                 <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
-                <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
             </div>
         </div>
         <div class="chart-container" id="dailyChart"></div>
     </div>
 </div>
 
-<!-- ===== 场景4: 按投放点位展示每月公域私域订单量 ===== -->
-<div class="chart-section">
-    <div class="chart-header">
-        <div class="chart-title">各投放点位月度订单量（公域 / 私域）</div>
-        <div class="checkbox-group" id="channelCheckboxGroup">
-            <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
-            <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
-            <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
+<!-- ===== 公域 / 私域 TOP5 产品 ===== -->
+<div class="charts-row">
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">公域销量TOP5产品</div>
         </div>
+        <div class="top-product-table-wrap" id="publicTop5Table"></div>
     </div>
-    <div class="chart-container tall" id="channelChart"></div>
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">私域销量TOP5产品</div>
+        </div>
+        <div class="top-product-table-wrap" id="privateTop5Table"></div>
+    </div>
 </div>
 
-<!-- ===== 场景5: 各投放点位 TOP5 产品（表格） ===== -->
-<div class="chart-section">
-    <div class="chart-header">
-        <div class="chart-title">各投放点位销量TOP5产品</div>
+<!-- ===== 业务类型 TOP3 产品 ===== -->
+<div class="charts-row three-col">
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">宽带新装 TOP3 产品</div>
+        </div>
+        <div class="top-product-table-wrap" id="bizNewTop3Table"></div>
     </div>
-    <div class="top-product-table-wrap" id="topProductTable"></div>
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">宽带续费 TOP3 产品</div>
+        </div>
+        <div class="top-product-table-wrap" id="bizRenewTop3Table"></div>
+    </div>
+    <div class="chart-section">
+        <div class="chart-header">
+            <div class="chart-title">宽带提速 TOP3 产品</div>
+        </div>
+        <div class="top-product-table-wrap" id="bizUpTop3Table"></div>
+    </div>
 </div>
 
 <script>
@@ -450,15 +486,16 @@
 // ${DATA_PLACEHOLDER}
 
 // ===== 图表实例 =====
-let monthlyChart, dailyChart, channelChart;
+let monthlyChart, dailyChart;
 
 // ===== 颜色配置 =====
 const COLORS = {
     total: '#667eea',
     '公域': '#e85d6a',
-    '私域': '#3ba272',
-    '外部渠道': '#fac858'
+    '私域': '#3ba272'
 };
+
+const BIZ_TYPES = DASHBOARD_DATA.biz_types;  // ["宽带新装","宽带续费","宽带提速"]
 
 // ===== 工具函数 =====
 function formatNumber(n) {
@@ -469,194 +506,192 @@ function getDomainColor(domain) {
     return COLORS[domain] || '#999';
 }
 
-// ===== 环比计算：当月截至最后一天 vs 上月同期(1日~同一天数) =====
-function calcMoM(month) {
-    const curDaily = DASHBOARD_DATA.daily_data[month];
-    if (!curDaily || !curDaily.days || curDaily.days.length === 0) {
-        return { total: null, '公域': null, '私域': null, '外部渠道': null };
-    }
-
-    // 当月截至最后一天的天数
-    const dayCount = curDaily.days.length;
-    const domains = ['total', '公域', '私域', '外部渠道'];
-
-    // 当月累计（截至最后一天）
-    const curSum = {};
-    for (const d of domains) {
-        curSum[d] = curDaily[d].reduce((a, b) => a + b, 0);
-    }
-
-    // 找上月 key
-    const [year, mon] = month.split('-').map(Number);
-    let prevYear = year, prevMon = mon - 1;
-    if (prevMon < 1) { prevMon = 12; prevYear--; }
-    const prevMonth = `${prevYear}-${String(prevMon).padStart(2, '0')}`;
-    const prevDaily = DASHBOARD_DATA.daily_data[prevMonth];
-
-    const result = {};
-    for (const d of domains) {
-        if (!prevDaily || !prevDaily.days || prevDaily.days.length === 0) {
-            result[d] = null;
-            continue;
-        }
-        // 上月同期：取前 dayCount 天
-        const sliceLen = Math.min(dayCount, prevDaily.days.length);
-        let prevSum = 0;
-        for (let i = 0; i < sliceLen; i++) {
-            prevSum += prevDaily[d][i];
-        }
-        if (prevSum === 0) {
-            result[d] = null;
-        } else {
-            result[d] = ((curSum[d] - prevSum) / prevSum) * 100;
-        }
-    }
-    return result;
+function bizKey(name) {
+    return name === '宽带新装' ? 'New' : name === '宽带续费' ? 'Renew' : 'Up';
 }
 
-// ===== 同比计算：当年截至今日 vs 去年截至同日（日对齐，按年累计） =====
-function calcYoYYearly(month) {
-    const [year, mon] = month.split('-').map(Number);
-    const curDaily = DASHBOARD_DATA.daily_data[month];
-    if (!curDaily || !curDaily.days || curDaily.days.length === 0) {
-        return { total: null, '公域': null, '私域': null, '外部渠道': null };
-    }
-    const asOfDay = curDaily.days.length; // 当月已出数据的天数 = 截至日
-    const domains = ['total', '公域', '私域', '外部渠道'];
-    const thisSum = {}, lastSum = {};
-    for (const d of domains) { thisSum[d] = 0; lastSum[d] = 0; }
+function colorSpan(text, val) {
+    return `<span style="color:${fmtColor(val)};font-weight:600;">${text}</span>`;
+}
 
-    // 本年 1月 ~ 当前月（当前月只取截至日）
-    for (let mm = 1; mm <= mon; mm++) {
-        const mk = `${year}-${String(mm).padStart(2, '0')}`;
+function fmtPct(val, prefix) {
+    if (val === null) return '—';
+    const sign = val >= 0 ? '+' : '';
+    return `${prefix}${sign}${val.toFixed(1)}%`;
+}
+
+function fmtColor(val) {
+    if (val === null) return '#aaa';
+    return val >= 0 ? '#e85d6a' : '#3ba272'; // 涨红跌绿
+}
+
+function getMonthData(m) {
+    return DASHBOARD_DATA.monthly_data.find(d => d.month === m);
+}
+
+function getBiz(m) {
+    return DASHBOARD_DATA.biz_monthly[m];
+}
+
+function getPrevMonth(month) {
+    const [y, mo] = month.split('-').map(Number);
+    let py = y, pm = mo - 1;
+    if (pm < 1) { pm = 12; py--; }
+    return `${py}-${String(pm).padStart(2, '0')}`;
+}
+
+function getLastYearMonth(month) {
+    const [y, mo] = month.split('-').map(Number);
+    return `${y - 1}-${String(mo).padStart(2, '0')}`;
+}
+
+// ===== 环比（日对齐，基于 daily，域维度） =====
+function calcMoM(month) {
+    const cur = DASHBOARD_DATA.daily_data[month];
+    if (!cur || !cur.days || cur.days.length === 0) return { total: null, '公域': null, '私域': null };
+    const dayCount = cur.days.length;
+    const curSum = {};
+    for (const d of ['total', '公域', '私域']) curSum[d] = cur[d].reduce((a, b) => a + b, 0);
+    const prev = getPrevMonth(month);
+    const prevD = DASHBOARD_DATA.daily_data[prev];
+    const res = {};
+    for (const d of ['total', '公域', '私域']) {
+        if (!prevD || !prevD.days || prevD.days.length === 0) { res[d] = null; continue; }
+        const n = Math.min(dayCount, prevD.days.length);
+        let s = 0;
+        for (let i = 0; i < n; i++) s += prevD[d][i];
+        res[d] = s > 0 ? ((curSum[d] - s) / s) * 100 : null;
+    }
+    return res;
+}
+
+// ===== 年累计同比（日对齐） =====
+function calcYoYYearly(month) {
+    const [y, mo] = month.split('-').map(Number);
+    const cur = DASHBOARD_DATA.daily_data[month];
+    if (!cur || !cur.days || cur.days.length === 0) return { total: null, '公域': null, '私域': null };
+    const asOf = cur.days.length;
+    const thisSum = {}, lastSum = {};
+    for (const d of ['total', '公域', '私域']) { thisSum[d] = 0; lastSum[d] = 0; }
+    for (let mm = 1; mm <= mo; mm++) {
+        const mk = `${y}-${String(mm).padStart(2, '0')}`;
         const dd = DASHBOARD_DATA.daily_data[mk];
         if (!dd || !dd.days || dd.days.length === 0) continue;
-        const limit = (mm === mon) ? asOfDay : dd.days.length;
-        for (const d of domains) {
-            for (let i = 0; i < limit && i < dd.days.length; i++) {
-                thisSum[d] += dd[d][i];
-            }
-        }
+        const lim = (mm === mo) ? asOf : dd.days.length;
+        for (const d of ['total', '公域', '私域']) for (let i = 0; i < lim && i < dd.days.length; i++) thisSum[d] += dd[d][i];
     }
-    // 去年 1月 ~ 同月（同月只取截至日，与今年对齐）
-    const ly = year - 1;
-    for (let mm = 1; mm <= mon; mm++) {
+    const ly = y - 1;
+    for (let mm = 1; mm <= mo; mm++) {
         const mk = `${ly}-${String(mm).padStart(2, '0')}`;
         const dd = DASHBOARD_DATA.daily_data[mk];
         if (!dd || !dd.days || dd.days.length === 0) continue;
-        const limit = (mm === mon) ? asOfDay : dd.days.length;
-        for (const d of domains) {
-            for (let i = 0; i < limit && i < dd.days.length; i++) {
-                lastSum[d] += dd[d][i];
-            }
-        }
+        const lim = (mm === mo) ? asOf : dd.days.length;
+        for (const d of ['total', '公域', '私域']) for (let i = 0; i < lim && i < dd.days.length; i++) lastSum[d] += dd[d][i];
     }
-    const result = {};
-    for (const d of domains) {
-        result[d] = lastSum[d] > 0 ? ((thisSum[d] - lastSum[d]) / lastSum[d]) * 100 : null;
-    }
-    return result;
+    const res = {};
+    for (const d of ['total', '公域', '私域']) res[d] = lastSum[d] > 0 ? ((thisSum[d] - lastSum[d]) / lastSum[d]) * 100 : null;
+    return res;
 }
 
-// ===== 同比计算：当月 vs 去年同月（日对齐） =====
+// ===== 当月同比（日对齐） =====
 function calcYoYMonth(month) {
-    const [year, mon] = month.split('-').map(Number);
-    const curDaily = DASHBOARD_DATA.daily_data[month];
-    if (!curDaily || !curDaily.days || curDaily.days.length === 0) {
-        return { total: null, '公域': null, '私域': null, '外部渠道': null };
-    }
-    const dayCount = curDaily.days.length;
-    const ly = year - 1;
-    const lastMonth = `${ly}-${String(mon).padStart(2, '0')}`;
-    const lastDaily = DASHBOARD_DATA.daily_data[lastMonth];
-    const domains = ['total', '公域', '私域', '外部渠道'];
+    const [y, mo] = month.split('-').map(Number);
+    const cur = DASHBOARD_DATA.daily_data[month];
+    if (!cur || !cur.days || cur.days.length === 0) return { total: null, '公域': null, '私域': null };
+    const dayCount = cur.days.length;
+    const ly = y - 1;
+    const lastMonth = `${ly}-${String(mo).padStart(2, '0')}`;
+    const lastD = DASHBOARD_DATA.daily_data[lastMonth];
     const curSum = {}, lastSum = {};
-    for (const d of domains) {
-        curSum[d] = curDaily[d].reduce((a, b) => a + b, 0);
+    for (const d of ['total', '公域', '私域']) {
+        curSum[d] = cur[d].reduce((a, b) => a + b, 0);
         lastSum[d] = 0;
-        if (lastDaily && lastDaily.days && lastDaily.days.length > 0) {
-            const limit = Math.min(dayCount, lastDaily.days.length);
-            for (let i = 0; i < limit; i++) lastSum[d] += lastDaily[d][i];
+        if (lastD && lastD.days && lastD.days.length > 0) {
+            const n = Math.min(dayCount, lastD.days.length);
+            for (let i = 0; i < n; i++) lastSum[d] += lastD[d][i];
         }
     }
-    const result = {};
-    for (const d of domains) {
-        result[d] = lastSum[d] > 0 ? ((curSum[d] - lastSum[d]) / lastSum[d]) * 100 : null;
-    }
-    return result;
+    const res = {};
+    for (const d of ['total', '公域', '私域']) res[d] = lastSum[d] > 0 ? ((curSum[d] - lastSum[d]) / lastSum[d]) * 100 : null;
+    return res;
+}
+
+// ===== 业务类型环比/同比（月度整月对比） =====
+function calcBizMoM(biz, month) {
+    const cur = getBiz(month) ? getBiz(month)[biz] : 0;
+    const prev = getBiz(getPrevMonth(month));
+    const pv = prev ? prev[biz] : 0;
+    return pv > 0 ? ((cur - pv) / pv) * 100 : null;
+}
+
+function calcBizYoY(biz, month) {
+    const cur = getBiz(month) ? getBiz(month)[biz] : 0;
+    const ly = getBiz(getLastYearMonth(month));
+    const lv = ly ? ly[biz] : 0;
+    return lv > 0 ? ((cur - lv) / lv) * 100 : null;
 }
 
 // ===== 场景1: 指标卡片 =====
 function updateCards() {
     const month = document.getElementById('cardMonthSelect').value;
-    const monthData = DASHBOARD_DATA.monthly_data.find(d => d.month === month);
+    const monthData = getMonthData(month);
     if (!monthData) return;
 
     // 当月数据
     document.getElementById('cardTotal').textContent = formatNumber(monthData.total);
     document.getElementById('cardPublic').textContent = formatNumber(monthData['公域']);
     document.getElementById('cardPrivate').textContent = formatNumber(monthData['私域']);
-    document.getElementById('cardExternal').textContent = formatNumber(monthData['外部渠道']);
 
-    // 当月占比 & 环比上月同期
     const pubPct = monthData.total > 0 ? (monthData['公域'] / monthData.total * 100).toFixed(1) : 0;
     const priPct = monthData.total > 0 ? (monthData['私域'] / monthData.total * 100).toFixed(1) : 0;
-    const extPct = monthData.total > 0 ? (monthData['外部渠道'] / monthData.total * 100).toFixed(1) : 0;
 
-    // 计算环比：当月截至最后一天 vs 上月同期(1日~同一天数)
     const momData = calcMoM(month);
-    // 计算同比：当月 vs 去年同月
     const yoyMonthData = calcYoYMonth(month);
-    const fmtPct = function(val, prefix) {
-        if (val === null) return '—';
-        const sign = val >= 0 ? '+' : '';
-        return `${prefix}${sign}${val.toFixed(1)}%`;
-    };
-    const fmtColor = function(val) {
-        if (val === null) return '#aaa';
-        return val >= 0 ? '#e85d6a' : '#3ba272'; // 涨红跌绿
-    };
 
-    // 当月卡片：占比 · 环比 · 同比
-    document.getElementById('cardTotalSub').innerHTML = `占比 ${pubPct}% · <span style="color:${fmtColor(momData.total)};font-weight:600;">${fmtPct(momData.total, '环比')}</span> · <span style="color:${fmtColor(yoyMonthData.total)};font-weight:600;">${fmtPct(yoyMonthData.total, '同比')}</span>`;
-    document.getElementById('cardPublicSub').innerHTML = `占比 ${pubPct}% · <span style="color:${fmtColor(momData['公域'])};font-weight:600;">${fmtPct(momData['公域'], '环比')}</span> · <span style="color:${fmtColor(yoyMonthData['公域'])};font-weight:600;">${fmtPct(yoyMonthData['公域'], '同比')}</span>`;
-    document.getElementById('cardPrivateSub').innerHTML = `占比 ${priPct}% · <span style="color:${fmtColor(momData['私域'])};font-weight:600;">${fmtPct(momData['私域'], '环比')}</span> · <span style="color:${fmtColor(yoyMonthData['私域'])};font-weight:600;">${fmtPct(yoyMonthData['私域'], '同比')}</span>`;
-    document.getElementById('cardExternalSub').innerHTML = `占比 ${extPct}% · <span style="color:${fmtColor(momData['外部渠道'])};font-weight:600;">${fmtPct(momData['外部渠道'], '环比')}</span> · <span style="color:${fmtColor(yoyMonthData['外部渠道'])};font-weight:600;">${fmtPct(yoyMonthData['外部渠道'], '同比')}</span>`;
+    document.getElementById('cardTotalSub').innerHTML = `占比 ${pubPct}% · ${colorSpan(fmtPct(momData.total, '环比'), momData.total)} · ${colorSpan(fmtPct(yoyMonthData.total, '同比'), yoyMonthData.total)}`;
+    document.getElementById('cardPublicSub').innerHTML = `占比 ${pubPct}% · ${colorSpan(fmtPct(momData['公域'], '环比'), momData['公域'])} · ${colorSpan(fmtPct(yoyMonthData['公域'], '同比'), yoyMonthData['公域'])}`;
+    document.getElementById('cardPrivateSub').innerHTML = `占比 ${priPct}% · ${colorSpan(fmtPct(momData['私域'], '环比'), momData['私域'])} · ${colorSpan(fmtPct(yoyMonthData['私域'], '同比'), yoyMonthData['私域'])}`;
 
-    // 年累计：仅累加同年份的月份（1月~所选月），避免跨年累加
+    // 年累计（仅同年份月份）
     const [curYear] = month.split('-');
-    let yearlyTotal = 0, yearlyPublic = 0, yearlyPrivate = 0, yearlyExternal = 0;
+    let yearlyTotal = 0, yearlyPublic = 0, yearlyPrivate = 0;
     for (const d of DASHBOARD_DATA.monthly_data) {
         if (d.month.startsWith(curYear + '-') && d.month <= month) {
             yearlyTotal += d.total;
             yearlyPublic += d['公域'];
             yearlyPrivate += d['私域'];
-            yearlyExternal += d['外部渠道'];
         }
     }
 
     document.getElementById('cardYearlyTotal').textContent = formatNumber(yearlyTotal);
     document.getElementById('cardYearlyPublic').textContent = formatNumber(yearlyPublic);
     document.getElementById('cardYearlyPrivate').textContent = formatNumber(yearlyPrivate);
-    document.getElementById('cardYearlyExternal').textContent = formatNumber(yearlyExternal);
 
     const yPubPct = yearlyTotal > 0 ? (yearlyPublic / yearlyTotal * 100).toFixed(1) : 0;
     const yPriPct = yearlyTotal > 0 ? (yearlyPrivate / yearlyTotal * 100).toFixed(1) : 0;
-    const yExtPct = yearlyTotal > 0 ? (yearlyExternal / yearlyTotal * 100).toFixed(1) : 0;
 
-    // 年累计同比：今年截至今日 vs 去年截至同日
     const yoyYearlyData = calcYoYYearly(month);
-    document.getElementById('cardYearlyTotalSub').innerHTML = `累计至 ${month} · <span style="color:${fmtColor(yoyYearlyData.total)};font-weight:600;">${fmtPct(yoyYearlyData.total, '同比')}</span>`;
-    document.getElementById('cardYearlyPublicSub').innerHTML = `占比 ${yPubPct}% · <span style="color:${fmtColor(yoyYearlyData['公域'])};font-weight:600;">${fmtPct(yoyYearlyData['公域'], '同比')}</span>`;
-    document.getElementById('cardYearlyPrivateSub').innerHTML = `占比 ${yPriPct}% · <span style="color:${fmtColor(yoyYearlyData['私域'])};font-weight:600;">${fmtPct(yoyYearlyData['私域'], '同比')}</span>`;
-    document.getElementById('cardYearlyExternalSub').innerHTML = `占比 ${yExtPct}% · <span style="color:${fmtColor(yoyYearlyData['外部渠道'])};font-weight:600;">${fmtPct(yoyYearlyData['外部渠道'], '同比')}</span>`;
+    document.getElementById('cardYearlyTotalSub').innerHTML = `累计至 ${month} · ${colorSpan(fmtPct(yoyYearlyData.total, '同比'), yoyYearlyData.total)}`;
+    document.getElementById('cardYearlyPublicSub').innerHTML = `占比 ${yPubPct}% · ${colorSpan(fmtPct(yoyYearlyData['公域'], '同比'), yoyYearlyData['公域'])}`;
+    document.getElementById('cardYearlyPrivateSub').innerHTML = `占比 ${yPriPct}% · ${colorSpan(fmtPct(yoyYearlyData['私域'], '同比'), yoyYearlyData['私域'])}`;
+
+    // 业务类型卡片（当月）
+    const biz = getBiz(month) || {};
+    for (const b of BIZ_TYPES) {
+        const key = bizKey(b);
+        const val = biz[b] || 0;
+        const pct = monthData.total > 0 ? (val / monthData.total * 100).toFixed(1) : 0;
+        const momB = calcBizMoM(b, month);
+        const yoyB = calcBizYoY(b, month);
+        document.getElementById('cardBiz' + key).textContent = formatNumber(val);
+        document.getElementById('cardBiz' + key + 'Sub').innerHTML = `占比 ${pct}% · ${colorSpan(fmtPct(momB, '环比'), momB)} · ${colorSpan(fmtPct(yoyB, '同比'), yoyB)}`;
+    }
 }
 
-// ===== 场景2: 每月订单量趋势（按年对比 · 分组柱状图） =====
+// ===== 场景2: 每月订单量趋势（按年对比，分组柱状图） =====
 function updateMonthlyChart() {
     const checked = Array.from(document.querySelectorAll('#monthlyCheckboxGroup input:checked')).map(cb => cb.value);
 
-    // 按年份分组：yearMap[year][monthIndex] = 月度数据
     const yearMap = {};
     for (const d of DASHBOARD_DATA.monthly_data) {
         const [y, m] = d.month.split('-').map(Number);
@@ -670,7 +705,6 @@ function updateMonthlyChart() {
     const series = [];
     const legendData = [];
 
-    // 顺序：每个域的「今年 / 去年」相邻并排，同域同色、今年实色、去年浅色
     for (const domain of checked) {
         const baseColor = getDomainColor(domain);
         const label = domain === 'total' ? '整体' : domain;
@@ -690,7 +724,7 @@ function updateMonthlyChart() {
                 barMaxWidth: 16,
                 itemStyle: {
                     color: baseColor,
-                    opacity: isLatest ? 1 : 0.35,   // 去年浅色，今年实色
+                    opacity: isLatest ? 1 : 0.35,
                 },
             });
         }
@@ -710,22 +744,10 @@ function updateMonthlyChart() {
                 return html;
             }
         },
-        legend: {
-            data: legendData,
-            top: 0,
-            type: 'scroll',
-        },
+        legend: { data: legendData, top: 0, type: 'scroll' },
         grid: { left: 60, right: 30, top: 50, bottom: 50 },
-        xAxis: {
-            type: 'category',
-            data: monthLabels,
-            axisLabel: { fontSize: 12 },
-        },
-        yAxis: {
-            type: 'value',
-            name: '订单量',
-            axisLabel: { formatter: function(v) { return formatNumber(v); } },
-        },
+        xAxis: { type: 'category', data: monthLabels, axisLabel: { fontSize: 12 } },
+        yAxis: { type: 'value', name: '订单量', axisLabel: { formatter: function(v) { return formatNumber(v); } } },
         series: series,
         barGap: '10%',
         barCategoryGap: '35%',
@@ -734,7 +756,6 @@ function updateMonthlyChart() {
             { type: 'slider', start: 0, end: 100, height: 20, bottom: 5 },
         ],
     };
-
     monthlyChart.setOption(option, true);
 }
 
@@ -771,160 +792,61 @@ function updateDailyChart() {
                 return html;
             }
         },
-        legend: {
-            data: checked.map(d => d === 'total' ? '整体' : d),
-            top: 0,
-            right: 0,
-        },
+        legend: { data: checked.map(d => d === 'total' ? '整体' : d), top: 0, right: 0 },
         grid: { left: 60, right: 30, top: 40, bottom: 50 },
-        xAxis: {
-            type: 'category',
-            data: xLabels,
-            axisLabel: { fontSize: 11 },
-            boundaryGap: false,
-        },
-        yAxis: {
-            type: 'value',
-            name: '订单量',
-            axisLabel: { formatter: function(v) { return formatNumber(v); } },
-        },
+        xAxis: { type: 'category', data: xLabels, axisLabel: { fontSize: 11 }, boundaryGap: false },
+        yAxis: { type: 'value', name: '订单量', axisLabel: { formatter: function(v) { return formatNumber(v); } } },
         series: series,
         dataZoom: [
             { type: 'inside', start: 0, end: 100 },
             { type: 'slider', start: 0, end: 100, height: 20, bottom: 8 },
         ],
     };
-
     dailyChart.setOption(option, true);
 }
 
-// ===== 场景4: 投放点位月度订单量 =====
-function updateChannelChart() {
-    const month = document.getElementById('cardMonthSelect').value;
-    const checked = Array.from(document.querySelectorAll('#channelCheckboxGroup input:checked')).map(cb => cb.value);
-    const channelData = DASHBOARD_DATA.channel_data[month];
-    if (!channelData) return;
-
-    // 过滤掉 total=0 的点位，并按 total 降序排列
-    const filtered = channelData.filter(d => d.total > 0).sort((a, b) => b.total - a.total);
-    const channels = filtered.map(d => d.channel);
-
-    const series = checked.map(domain => ({
-        name: domain,
-        type: 'bar',
-        data: filtered.map(d => d[domain]),
-        itemStyle: { color: getDomainColor(domain) },
-        stack: 'channel',
-    }));
-
-    const option = {
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: { type: 'shadow' },
-            formatter: function(params) {
-                let html = `${month.replace('-', '年')}月<br/>`;
-                html += `<b>${params[0].name}</b><br/>`;
-                let total = 0;
-                params.forEach(p => {
-                    html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
-                    total += p.value;
-                });
-                html += `合计: <b>${formatNumber(total)}</b>`;
-                return html;
-            }
-        },
-        legend: {
-            data: checked,
-            top: 0,
-            right: 0,
-        },
-        grid: { left: 100, right: 30, top: 40, bottom: 40 },
-        xAxis: {
-            type: 'value',
-            name: '订单量',
-            axisLabel: { formatter: function(v) { return formatNumber(v); } },
-        },
-        yAxis: {
-            type: 'category',
-            data: channels,
-            axisLabel: { fontSize: 12 },
-            inverse: true,
-        },
-        series: series,
-    };
-
-    channelChart.setOption(option, true);
+// ===== 场景5&6: TOP5 / TOP3 产品表格 =====
+function renderTopTable(containerId, list) {
+    const el = document.getElementById(containerId);
+    if (!list || list.length === 0) {
+        el.innerHTML = '<div class="no-data">暂无数据</div>';
+        return;
+    }
+    let html = '<table class="top-product-table"><thead><tr><th>排名</th><th>产品名称</th><th>单量</th></tr></thead><tbody>';
+    list.forEach((item, i) => {
+        html += `<tr><td><span class="rank rank-${i + 1}">${i + 1}</span></td><td class="product-name">${item.name}</td><td>${formatNumber(item.value)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
 }
 
-// ===== 场景5: 各投放点位 TOP5 产品（表格） =====
-function updateTopProductTable() {
+function updateTopProducts() {
     const month = document.getElementById('cardMonthSelect').value;
-    const monthData = DASHBOARD_DATA.channel_top_products[month] || {};
-    const channels = DASHBOARD_DATA.channels.filter(ch => ch !== '未知');
-
-    // 按各点位 total 降序排列
-    const channelOrder = DASHBOARD_DATA.channel_data[month]
-        ? DASHBOARD_DATA.channel_data[month]
-            .filter(d => d.total > 0)
-            .sort((a, b) => b.total - a.total)
-            .map(d => d.channel)
-        : channels;
-
-    let html = '<table class="top-product-table"><thead><tr>';
-    html += '<th>排名</th>';
-    for (const ch of channelOrder) {
-        html += `<th>${ch}</th>`;
-    }
-    html += '</tr></thead><tbody>';
-
-    for (let rank = 0; rank < 5; rank++) {
-        html += '<tr>';
-        html += `<td><span class="rank rank-${rank + 1}">${rank + 1}</span></td>`;
-        for (const ch of channelOrder) {
-            const products = monthData[ch] || [];
-            const item = products[rank];
-            if (item) {
-                html += `<td><span class="product-name">${item.name}</span><br><span style="color:#888;font-size:12px;">${formatNumber(item.value)} 单</span></td>`;
-            } else {
-                html += '<td class="no-data">—</td>';
-            }
-        }
-        html += '</tr>';
-    }
-
-    html += '</tbody></table>';
-    document.getElementById('topProductTable').innerHTML = html;
+    renderTopTable('publicTop5Table', DASHBOARD_DATA.public_top5[month] || []);
+    renderTopTable('privateTop5Table', DASHBOARD_DATA.private_top5[month] || []);
+    const bz = DASHBOARD_DATA.biz_top3[month] || {};
+    renderTopTable('bizNewTop3Table', bz['宽带新装'] || []);
+    renderTopTable('bizRenewTop3Table', bz['宽带续费'] || []);
+    renderTopTable('bizUpTop3Table', bz['宽带提速'] || []);
 }
 
 // ===== 初始化 =====
 function init() {
-    // 初始化图表
     monthlyChart = echarts.init(document.getElementById('monthlyChart'));
     dailyChart = echarts.init(document.getElementById('dailyChart'));
-    channelChart = echarts.init(document.getElementById('channelChart'));
 
-    // 填充月份选择器
     const months = DASHBOARD_DATA.months;
-    const monthOptions = months.map(m => {
+    document.getElementById('cardMonthSelect').innerHTML = months.map(m => {
         const label = m.replace('-', '年') + '月';
         return `<option value="${m}">${label}</option>`;
     }).join('');
-
-    document.getElementById('cardMonthSelect').innerHTML = monthOptions;
-
-    // 默认选中最新月份
-    const defaultMonth = DASHBOARD_DATA.current_month;
-    document.getElementById('cardMonthSelect').value = defaultMonth;
-
-    // 更新时间
+    document.getElementById('cardMonthSelect').value = DASHBOARD_DATA.current_month;
     document.getElementById('updateTime').textContent = `数据更新于 ${DASHBOARD_DATA.generated_at}`;
 
-    // 头部月份联动：切换时同步刷新所有月份相关模块
     document.getElementById('cardMonthSelect').addEventListener('change', function() {
         updateCards();
         updateDailyChart();
-        updateChannelChart();
-        updateTopProductTable();
+        updateTopProducts();
     });
 
     document.querySelectorAll('#monthlyCheckboxGroup input').forEach(cb => {
@@ -933,26 +855,18 @@ function init() {
     document.querySelectorAll('#dailyCheckboxGroup input').forEach(cb => {
         cb.addEventListener('change', updateDailyChart);
     });
-    document.querySelectorAll('#channelCheckboxGroup input').forEach(cb => {
-        cb.addEventListener('change', updateChannelChart);
-    });
 
-    // 窗口resize
     window.addEventListener('resize', () => {
         monthlyChart.resize();
         dailyChart.resize();
-        channelChart.resize();
     });
 
-    // 首次渲染
     updateCards();
     updateMonthlyChart();
     updateDailyChart();
-    updateChannelChart();
-    updateTopProductTable();
+    updateTopProducts();
 }
 
-// 启动
 document.addEventListener('DOMContentLoaded', init);
 </script>
 

@@ -17,6 +17,7 @@ import os
 
 # 复用 process_data.py 的数据处理逻辑
 from process_data import main as process_data
+from process_data_broadband import main as process_data_broadband
 
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -51,6 +52,8 @@ def main():
     # Step 1: 处理数据，生成 HTML
     print("\n[1/3] 处理 Excel 数据，生成 HTML 文件...")
     process_data()
+    print("\n  处理宽带业务数据...")
+    process_data_broadband()
 
     # Step 2: Git 提交
     print("\n[2/3] 提交到 Git...")
