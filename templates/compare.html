@@ -1135,6 +1135,25 @@ function renderMallYytTable(datesA, datesB) {
         }
     }
 
+    // 汇总行：全部产品合计对比
+    let gA = 0, gB = 0;
+    for (const item of list) { gA += item.valA; gB += item.valB; }
+    const gDiff = gB - gA;
+    const gPct = gA > 0 ? (gDiff / gA) * 100 : null;
+    const gDiffStr = (gDiff >= 0 ? '+' : '') + formatNumber(gDiff);
+    const gPctStr = gPct !== null ? formatPct(gPct) : '';
+    const gBarClass = gDiff >= 0 ? 'up' : 'down';
+    const gBarWidth = Math.max(2, (Math.abs(gDiff) / maxAbsDiff) * 100);
+    html += `<tr style="background:#f0f0fa;font-weight:700;">
+        <td></td>
+        <td style="text-align:left;">汇总（全部产品）</td>
+        <td style="font-weight:700;">${formatNumber(gA)}</td>
+        <td style="font-weight:700;">${formatNumber(gB)}</td>
+        <td class="${diffClass(gDiff)}" style="font-weight:700;">${gDiffStr}</td>
+        <td class="${pctClass(gPct)}" style="font-weight:700;">${gPctStr}</td>
+        <td><div class="trend-container"><div class="trend-bar ${gBarClass}" style="width:${gBarWidth}px;"></div></div></td>
+    </tr>`;
+
     tbody.innerHTML = html;
 }
 
@@ -1195,6 +1214,24 @@ function renderCllLocationTable(datesA, datesB) {
             </td>
         </tr>`;
     });
+
+    // 汇总行：全部投放位置合计对比
+    let grandA = 0, grandB = 0;
+    for (const item of list) { grandA += item.totalA; grandB += item.totalB; }
+    const grandDiff = grandB - grandA;
+    const grandPct = grandA > 0 ? (grandDiff / grandA) * 100 : null;
+    const grandDiffStr = (grandDiff >= 0 ? '+' : '') + formatNumber(grandDiff);
+    const grandPctStr = grandPct !== null ? formatPct(grandPct) : '';
+    const grandBarClass = grandDiff >= 0 ? 'up' : 'down';
+    const grandBarWidth = Math.min(100, Math.max(2, (Math.abs(grandDiff) / maxAbsDiff) * 100));
+    html += `<tr style="background:#f0f0fa;">
+        <td style="text-align:left;font-weight:700;">汇总（全部位置）</td>
+        <td style="font-weight:700;">${formatNumber(grandA)}</td>
+        <td style="font-weight:700;">${formatNumber(grandB)}</td>
+        <td class="${diffClass(grandDiff)}" style="font-weight:700;">${grandDiffStr}</td>
+        <td class="${pctClass(grandPct)}" style="font-weight:700;">${grandPctStr}</td>
+        <td><div class="trend-container"><div class="trend-bar ${grandBarClass}" style="width:${grandBarWidth}px;"></div></div></td>
+    </tr>`;
 
     tbody.innerHTML = html;
 }
