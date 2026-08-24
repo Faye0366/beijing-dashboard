@@ -588,6 +588,27 @@
     </div>
 </div>
 
+<!-- ===== 公域移动营业厅·精选流量 产品单量对比 ===== -->
+<div class="table-section">
+    <div class="table-title">公域移动营业厅·精选流量 产品单量对比（U=公域 &amp; V=移动营业厅 &amp; W=精选流量，按时段B单量排序）</div>
+    <div style="overflow-x:auto;">
+        <table class="compare-table" id="mallYytTable">
+            <thead>
+                <tr>
+                    <th>排名</th>
+                    <th style="text-align:left;">产品名称</th>
+                    <th>时段A单量</th>
+                    <th>时段B单量</th>
+                    <th>差值</th>
+                    <th>涨跌幅</th>
+                    <th>趋势</th>
+                </tr>
+            </thead>
+            <tbody id="mallYytTbody"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
 // ===== 数据会被嵌入这里 =====
 // ${DATA_PLACEHOLDER}
@@ -755,6 +776,7 @@ function executeCompare(datesA, datesB, labelA, labelB) {
     renderChannelPrivateTable(datesA, datesB);
     renderCllTopTable(datesA, datesB);
     renderCllLocationTable(datesA, datesB);
+    renderMallYytTable(datesA, datesB);
 }
 
 // ===== 执行对比（按月 / 自定义日期） =====
@@ -999,6 +1021,80 @@ function renderCllTopTable(datesA, datesB) {
 
             html += `<tr>
                 <td><span class="cll-rank cll-rank-${i + 1}">${i + 1}</span></td>
+                <td style="text-align:left;font-weight:600;">${item.product}</td>
+                <td>${formatNumber(item.valA)}</td>
+                <td>${formatNumber(item.valB)}</td>
+                <td class="${diffClass(item.diff)}">${diffStr}</td>
+                <td class="${pctClass(item.pct)}">${pctStr} ${tag}</td>
+                <td>
+                    <div class="trend-container">
+                        <div class="trend-bar ${barClass}" style="width:${barWidth}px;"></div>
+                    </div>
+                </td>
+            </tr>`;
+        }
+    }
+
+    tbody.innerHTML = html;
+}
+
+// ===== 渲染公域移动营业厅·精选流量 产品单量对比表格 =====
+function renderMallYytTable(datesA, datesB) {
+    const mallData = COMPARE_DATA.mall_yyt_daily || {};
+
+    // 聚合时段A
+    const sumA = {};
+    for (const date of datesA) {
+        const dayData = mallData[date];
+        if (!dayData) continue;
+        for (const [name, val] of Object.entries(dayData)) {
+            sumA[name] = (sumA[name] || 0) + val;
+        }
+    }
+
+    // 聚合时段B
+    const sumB = {};
+    for (const date of datesB) {
+        const dayData = mallData[date];
+        if (!dayData) continue;
+        for (const [name, val] of Object.entries(dayData)) {
+            sumB[name] = (sumB[name] || 0) + val;
+        }
+    }
+
+    // 合并所有产品，按时段B单量降序
+    const allProducts = new Set([...Object.keys(sumA), ...Object.keys(sumB)]);
+    const list = [];
+    for (const product of allProducts) {
+        const valA = sumA[product] || 0;
+        const valB = sumB[product] || 0;
+        const diff = valB - valA;
+        const pct = valA > 0 ? ((valB - valA) / valA) * 100 : null;
+        list.push({ product, valA, valB, diff, pct });
+    }
+    list.sort((a, b) => b.valB - a.valB);
+
+    // 趋势条缩放：用差值绝对值的最大值
+    const maxAbsDiff = list.length > 0 ? Math.max(...list.map(i => Math.abs(i.diff)), 1) : 1;
+
+    const tbody = document.getElementById('mallYytTbody');
+    let html = '';
+
+    if (list.length === 0) {
+        html = '<tr><td colspan="7" style="color:#ccc;text-align:center;padding:16px;">所选时段无公域移动营业厅·精选流量数据</td></tr>';
+    } else {
+        for (let i = 0; i < list.length; i++) {
+            const item = list[i];
+            const diffStr = (item.diff >= 0 ? '+' : '') + formatNumber(item.diff);
+            const pctStr = item.pct !== null ? formatPct(item.pct) : '';
+            const tag = item.valA === 0 && item.valB > 0 ? '<span class="tag-new">新增</span>' :
+                        item.valB === 0 && item.valA > 0 ? '<span class="tag-gone">消失</span>' : '';
+            const barWidth = Math.max(2, (Math.abs(item.diff) / maxAbsDiff) * 100);
+            const barClass = item.diff >= 0 ? 'up' : 'down';
+            const rankCls = i < 3 ? `cll-rank-${i + 1}` : '';
+
+            html += `<tr>
+                <td><span class="cll-rank ${rankCls}">${i + 1}</span></td>
                 <td style="text-align:left;font-weight:600;">${item.product}</td>
                 <td>${formatNumber(item.valA)}</td>
                 <td>${formatNumber(item.valB)}</td>
