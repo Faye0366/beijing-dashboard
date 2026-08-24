@@ -547,6 +547,26 @@
     </div>
 </div>
 
+<!-- ===== 充流量频道各投放位置产品对比 ===== -->
+<div class="table-section">
+    <div class="table-title">充流量频道各投放位置产品涨跌对比（点击位置展开产品明细）</div>
+    <div style="overflow-x:auto;">
+        <table class="compare-table" id="cllLocationTable">
+            <thead>
+                <tr>
+                    <th style="text-align:left;">具体投放位置</th>
+                    <th>时段A单量</th>
+                    <th>时段B单量</th>
+                    <th>差值</th>
+                    <th>涨跌幅</th>
+                    <th>趋势</th>
+                </tr>
+            </thead>
+            <tbody id="cllLocationTbody"></tbody>
+        </table>
+    </div>
+</div>
+
 <!-- ===== 充流量频道TOP20产品对比 ===== -->
 <div class="table-section">
     <div class="table-title">充流量频道销量TOP20产品对比（按时段B单量排序）</div>
@@ -734,6 +754,7 @@ function executeCompare(datesA, datesB, labelA, labelB) {
     renderChannelPublicTable(datesA, datesB);
     renderChannelPrivateTable(datesA, datesB);
     renderCllTopTable(datesA, datesB);
+    renderCllLocationTable(datesA, datesB);
 }
 
 // ===== 执行对比（按月 / 自定义日期） =====
@@ -993,6 +1014,110 @@ function renderCllTopTable(datesA, datesB) {
     }
 
     tbody.innerHTML = html;
+}
+
+// ===== 渲染充流量频道各投放位置产品对比表格 =====
+function renderCllLocationTable(datesA, datesB) {
+    const aggA = aggregateCllLocationRange(datesA);
+    const aggB = aggregateCllLocationRange(datesB);
+    const allLocs = new Set([...Object.keys(aggA), ...Object.keys(aggB)]);
+
+    const list = [];
+    for (const loc of allLocs) {
+        const prodsA = aggA[loc] || {};
+        const prodsB = aggB[loc] || {};
+        const totalA = Object.values(prodsA).reduce((a, b) => a + b, 0);
+        const totalB = Object.values(prodsB).reduce((a, b) => a + b, 0);
+        list.push({
+            location: loc, totalA, totalB,
+            diff: totalB - totalA,
+            pct: totalA > 0 ? ((totalB - totalA) / totalA) * 100 : null,
+            prodsA, prodsB
+        });
+    }
+    // 按时段B单量降序
+    list.sort((x, y) => y.totalB - x.totalB);
+
+    const tbody = document.getElementById('cllLocationTbody');
+    let html = '';
+    const maxAbsDiff = list.length > 0 ? Math.max(...list.map(i => Math.abs(i.diff)), 1) : 1;
+
+    list.forEach((item, idx) => {
+        const diffStr = (item.diff >= 0 ? '+' : '') + formatNumber(item.diff);
+        const pctStr = item.pct !== null ? formatPct(item.pct) : '';
+        const tag = item.totalA === 0 && item.totalB > 0 ? '<span class="tag-new">新增</span>' :
+                    item.totalB === 0 && item.totalA > 0 ? '<span class="tag-gone">消失</span>' : '';
+        const barWidth = Math.max(2, (Math.abs(item.diff) / maxAbsDiff) * 100);
+        const barClass = item.diff >= 0 ? 'up' : 'down';
+
+        html += `<tr class="product-row" onclick="toggleCllLocationDetail(${idx})">
+            <td style="text-align:left;">${item.location} <span class="expand-icon">▸</span></td>
+            <td>${formatNumber(item.totalA)}</td>
+            <td>${formatNumber(item.totalB)}</td>
+            <td class="${diffClass(item.diff)}">${diffStr}</td>
+            <td class="${pctClass(item.pct)}">${pctStr} ${tag}</td>
+            <td>
+                <div class="trend-container">
+                    <div class="trend-bar ${barClass}" style="width:${barWidth}px;"></div>
+                </div>
+            </td>
+        </tr>`;
+        html += `<tr class="detail-row" id="cllLocDetail-${idx}" style="display:none;">
+            <td colspan="6" style="padding:0;background:#fafafa;">
+                <table class="detail-table">
+                    <thead><tr><th style="text-align:left;">产品名称</th><th>时段A</th><th>时段B</th><th>差值</th><th>涨跌幅</th></tr></thead>
+                    <tbody>${buildCllLocationDetailRows(item.prodsA, item.prodsB)}</tbody>
+                </table>
+            </td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+
+function aggregateCllLocationRange(dates) {
+    const res = {};
+    for (const d of dates) {
+        const locMap = COMPARE_DATA.cll_location_daily[d];
+        if (!locMap) continue;
+        for (const loc in locMap) {
+            if (!res[loc]) res[loc] = {};
+            for (const p in locMap[loc]) {
+                res[loc][p] = (res[loc][p] || 0) + locMap[loc][p];
+            }
+        }
+    }
+    return res;
+}
+
+function buildCllLocationDetailRows(prodsA, prodsB) {
+    const allP = Array.from(new Set([...Object.keys(prodsA || {}), ...Object.keys(prodsB || {})]));
+    const rows = allP.map(p => {
+        const a = (prodsA && prodsA[p]) || 0;
+        const b = (prodsB && prodsB[p]) || 0;
+        return { p, a, b, diff: b - a, pct: a > 0 ? ((b - a) / a) * 100 : null };
+    });
+    rows.sort((x, y) => y.b - x.b);
+    return rows.map(r => {
+        const diffStr = (r.diff >= 0 ? '+' : '') + formatNumber(r.diff);
+        const pctStr = r.pct !== null ? formatPct(r.pct) : '';
+        const tag = r.a === 0 && r.b > 0 ? '<span class="tag-new">新增</span>' :
+                    r.b === 0 && r.a > 0 ? '<span class="tag-gone">消失</span>' : '';
+        return `<tr><td style="text-align:left;">${r.p}</td><td>${formatNumber(r.a)}</td><td>${formatNumber(r.b)}</td><td class="${diffClass(r.diff)}">${diffStr}</td><td class="${pctClass(r.pct)}">${pctStr} ${tag}</td></tr>`;
+    }).join('');
+}
+
+function toggleCllLocationDetail(idx) {
+    const row = document.getElementById('cllLocDetail-' + idx);
+    if (!row) return;
+    const icon = row.previousElementSibling.querySelector('.expand-icon');
+    if (row.style.display === 'none') {
+        row.style.display = '';
+        if (icon) icon.textContent = '▾';
+    } else {
+        row.style.display = 'none';
+        if (icon) icon.textContent = '▸';
+    }
 }
 
 // ===== 渲染公域渠道点位对比表格 =====

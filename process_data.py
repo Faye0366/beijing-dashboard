@@ -47,6 +47,8 @@ def main():
     channel_public_daily = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     # 私域渠道点位日期级数据 [date_str][投放点位] = 成功订单量（用于对比页面）
     channel_private_daily = defaultdict(lambda: defaultdict(int))
+    # 充流量频道具体投放位置产品日期级数据 [date_str][具体投放位置(W)][产品名称(B)] = 成功订单量（用于对比页面）
+    cll_location_daily = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     # product_detail[date_str][统一产品名称(T列)][公/私域(U列)][投放点位(V列)] = 成功订单量
     product_detail = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
     all_products_set = set()
@@ -115,6 +117,8 @@ def main():
         if channel == "充流量":
             cll_product_monthly[month_key][product_name] += success
             cll_product_daily[date_str][product_name] += success
+            location = w_val if w_val else "未指定"
+            cll_location_daily[date_str][location][product_name] += success
 
         # 渠道点位对比数据（仅流量包和套餐，用于对比页面）
         if e_val in ("流量包", "套餐"):
@@ -238,6 +242,7 @@ def main():
         "cll_product_daily": {d: dict(v) for d, v in sorted(cll_product_daily.items())},
         "channel_public_daily": {d: {ch: dict(locs) for ch, locs in v.items()} for d, v in sorted(channel_public_daily.items())},
         "channel_private_daily": {d: dict(v) for d, v in sorted(channel_private_daily.items())},
+        "cll_location_daily": {d: {loc: dict(prods) for loc, prods in v.items()} for d, v in sorted(cll_location_daily.items())},
     }
 
     compare_json = json.dumps(compare_result, ensure_ascii=False)
