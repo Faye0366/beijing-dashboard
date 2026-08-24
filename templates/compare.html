@@ -1091,7 +1091,7 @@ function renderMallYytTable(datesA, datesB) {
                         item.valB === 0 && item.valA > 0 ? '<span class="tag-gone">消失</span>' : '';
             const barWidth = Math.max(2, (Math.abs(item.diff) / maxAbsDiff) * 100);
             const barClass = item.diff >= 0 ? 'up' : 'down';
-            const rankCls = i < 3 ? `cll-rank-${i + 1}` : '';
+            const rankCls = `cll-rank-${i + 1}`;
 
             html += `<tr>
                 <td><span class="cll-rank ${rankCls}">${i + 1}</span></td>
