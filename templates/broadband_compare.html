@@ -191,6 +191,32 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* 模块折叠箭头 + 文字说明 */
+        .collapse-arrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 10px;
+            font-size: 12px;
+            color: #999;
+            flex-shrink: 0;
+        }
+        .collapse-arrow .arrow-icon {
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
+        .table-section.collapsed .collapse-arrow .arrow-icon {
+            transform: rotate(-90deg);
+        }
+        .table-section.collapsed > *:not(.table-title) {
+            display: none !important;
         }
 
         .compare-table {
@@ -1058,7 +1084,25 @@ function init() {
         document.getElementById('yoyEnd').value = COMPARE_DATA.all_dates[COMPARE_DATA.all_dates.length - 1];
     }
 
+    // 为所有对比模块标题添加折叠箭头（默认展开）
+    document.querySelectorAll('.table-section').forEach(function (sec) {
+        const title = sec.querySelector('.table-title');
+        if (!title) return;
+        const arrow = document.createElement('span');
+        arrow.className = 'collapse-arrow';
+        arrow.innerHTML = '<span class="arrow-icon">▼</span><span class="arrow-text">收起</span>';
+        title.appendChild(arrow);
+        title.addEventListener('click', function () { toggleSection(sec); });
+    });
+
     runCompare();
+}
+
+// 折叠/展开指定模块（点击标题箭头），默认不隐藏
+function toggleSection(sec) {
+    const collapsed = sec.classList.toggle('collapsed');
+    const txt = sec.querySelector('.collapse-arrow .arrow-text');
+    if (txt) txt.textContent = collapsed ? '展开' : '收起';
 }
 
 document.addEventListener('DOMContentLoaded', init);
