@@ -198,15 +198,21 @@
             user-select: none;
         }
 
-        /* 模块折叠箭头 */
+        /* 模块折叠箭头 + 文字说明 */
         .collapse-arrow {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             margin-left: 10px;
             font-size: 12px;
             color: #999;
+            flex-shrink: 0;
+        }
+        .collapse-arrow .arrow-icon {
+            display: inline-block;
             transition: transform 0.2s ease;
         }
-        .table-section.collapsed .collapse-arrow {
+        .table-section.collapsed .collapse-arrow .arrow-icon {
             transform: rotate(-90deg);
         }
         .table-section.collapsed > *:not(.table-title) {
@@ -1651,7 +1657,7 @@ function init() {
         if (!title) return;
         const arrow = document.createElement('span');
         arrow.className = 'collapse-arrow';
-        arrow.textContent = '▼';
+        arrow.innerHTML = '<span class="arrow-icon">▼</span><span class="arrow-text">收起</span>';
         title.appendChild(arrow);
         title.addEventListener('click', function () { toggleSection(sec); });
     });
@@ -1663,6 +1669,8 @@ function init() {
 // 折叠/展开指定模块（点击标题箭头），默认不隐藏
 function toggleSection(sec) {
     const collapsed = sec.classList.toggle('collapsed');
+    const txt = sec.querySelector('.collapse-arrow .arrow-text');
+    if (txt) txt.textContent = collapsed ? '展开' : '收起';
     if (!collapsed) {
         // 展开后若含图表，调用 resize 避免尺寸异常
         sec.querySelectorAll('.chart-container').forEach(function (c) {
