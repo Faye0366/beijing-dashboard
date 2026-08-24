@@ -1050,8 +1050,8 @@ function renderCllLocationTable(datesA, datesB) {
         const barWidth = Math.max(2, (Math.abs(item.diff) / maxAbsDiff) * 100);
         const barClass = item.diff >= 0 ? 'up' : 'down';
 
-        html += `<tr class="product-row" onclick="toggleCllLocationDetail(${idx})">
-            <td style="text-align:left;">${item.location} <span class="expand-icon">▸</span></td>
+        html += `<tr class="product-row" onclick="toggleCllLocationDetail(${idx})" id="cllLocRow-${idx}">
+            <td style="text-align:left;"><span class="arrow-icon">▶</span> ${item.location}</td>
             <td>${formatNumber(item.totalA)}</td>
             <td>${formatNumber(item.totalB)}</td>
             <td class="${diffClass(item.diff)}">${diffStr}</td>
@@ -1062,12 +1062,14 @@ function renderCllLocationTable(datesA, datesB) {
                 </div>
             </td>
         </tr>`;
-        html += `<tr class="detail-row" id="cllLocDetail-${idx}" style="display:none;">
-            <td colspan="6" style="padding:0;background:#fafafa;">
-                <table class="detail-table">
-                    <thead><tr><th style="text-align:left;">产品名称</th><th>时段A</th><th>时段B</th><th>差值</th><th>涨跌幅</th></tr></thead>
-                    <tbody>${buildCllLocationDetailRows(item.prodsA, item.prodsB)}</tbody>
-                </table>
+        html += `<tr class="detail-row hidden" id="cllLocDetail-${idx}">
+            <td colspan="6">
+                <div class="detail-inner">
+                    <table class="detail-table">
+                        <thead><tr><th style="text-align:left;">产品名称</th><th>时段A</th><th>时段B</th><th>差值</th><th>涨跌幅</th></tr></thead>
+                        <tbody>${buildCllLocationDetailRows(item.prodsA, item.prodsB)}</tbody>
+                    </table>
+                </div>
             </td>
         </tr>`;
     });
@@ -1108,15 +1110,15 @@ function buildCllLocationDetailRows(prodsA, prodsB) {
 }
 
 function toggleCllLocationDetail(idx) {
-    const row = document.getElementById('cllLocDetail-' + idx);
-    if (!row) return;
-    const icon = row.previousElementSibling.querySelector('.expand-icon');
-    if (row.style.display === 'none') {
-        row.style.display = '';
-        if (icon) icon.textContent = '▾';
+    const row = document.getElementById('cllLocRow-' + idx);
+    const detail = document.getElementById('cllLocDetail-' + idx);
+    if (!row || !detail) return;
+    if (row.classList.contains('expanded')) {
+        row.classList.remove('expanded');
+        detail.classList.add('hidden');
     } else {
-        row.style.display = 'none';
-        if (icon) icon.textContent = '▸';
+        row.classList.add('expanded');
+        detail.classList.remove('hidden');
     }
 }
 
