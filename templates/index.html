@@ -166,10 +166,76 @@
         }
 
         .charts-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
             margin-bottom: 20px;
+        }
+
+        /* 图表与数据表并排 */
+        .chart-table-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .trend-chart {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 320px;
+        }
+
+        .trend-table-wrap {
+            flex: 0 0 400px;
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .trend-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .trend-data-table thead th {
+            position: sticky;
+            top: 0;
+            background: #f7f8fa;
+            color: #555;
+            font-weight: 600;
+            padding: 8px 6px;
+            border-bottom: 1px solid #e8e8e8;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .trend-data-table thead th:first-child {
+            text-align: left;
+        }
+
+        .trend-data-table tbody td {
+            padding: 6px 6px;
+            border-bottom: 1px solid #f2f2f2;
+            text-align: right;
+            white-space: nowrap;
+            color: #444;
+        }
+
+        .trend-data-table tbody td:first-child {
+            text-align: left;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .trend-data-table tbody tr:hover {
+            background: #fafbff;
+        }
+
+        .pct-cell {
+            font-size: 11px;
+            line-height: 1.5;
         }
 
         .chart-header {
@@ -326,6 +392,13 @@
             .charts-row {
                 grid-template-columns: 1fr;
             }
+            .chart-table-row {
+                flex-direction: column;
+            }
+            .trend-table-wrap {
+                flex: 1 1 auto;
+                max-height: none;
+            }
             .header {
                 flex-direction: column;
                 gap: 12px;
@@ -393,9 +466,9 @@
     </div>
 </div>
 
-<!-- ===== 场景2&3: 每月订单量趋势 + 日订单量趋势（左右排列）===== -->
+<!-- ===== 场景2&3: 每月订单量趋势 + 日订单量趋势（上下排列，图右表）===== -->
 <div class="charts-row">
-    <!-- 每月订单量趋势（左） -->
+    <!-- 每月订单量趋势（上） -->
     <div class="chart-section">
         <div class="chart-header">
             <div class="chart-title">每月订单量趋势（按年对比）</div>
@@ -406,10 +479,27 @@
                 <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
             </div>
         </div>
-        <div class="chart-container" id="monthlyChart"></div>
+        <div class="chart-table-row">
+            <div class="chart-container trend-chart" id="monthlyChart"></div>
+            <div class="trend-table-wrap">
+                <table class="trend-data-table">
+                    <thead>
+                        <tr>
+                            <th>月份</th>
+                            <th>公域订单量</th>
+                            <th>私域订单量</th>
+                            <th>外部渠道订单量</th>
+                            <th>合计</th>
+                            <th>公域/私域/外部占比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- 日订单量趋势（右） -->
+    <!-- 日订单量趋势（下） -->
     <div class="chart-section">
         <div class="chart-header">
             <div class="chart-title">日订单量趋势</div>
@@ -420,7 +510,24 @@
                 <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
             </div>
         </div>
-        <div class="chart-container" id="dailyChart"></div>
+        <div class="chart-table-row">
+            <div class="chart-container trend-chart" id="dailyChart"></div>
+            <div class="trend-table-wrap">
+                <table class="trend-data-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>公域订单量</th>
+                            <th>私域订单量</th>
+                            <th>外部渠道订单量</th>
+                            <th>合计</th>
+                            <th>公域/私域/外部占比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -798,6 +905,68 @@ function updateDailyChart() {
     dailyChart.setOption(option, true);
 }
 
+// ===== 场景2 表格: 每月订单量趋势数据表 =====
+function renderMonthlyTable() {
+    const tbody = document.getElementById('monthlyTableBody');
+    let html = '';
+    for (const d of DASHBOARD_DATA.monthly_data) {
+        const total = d.total;
+        const pPub = total ? (d['公域'] / total * 100) : 0;
+        const pPri = total ? (d['私域'] / total * 100) : 0;
+        const pExt = total ? (d['外部渠道'] / total * 100) : 0;
+        const [y, m] = d.month.split('-');
+        html += `<tr>
+            <td>${y}年${Number(m)}月</td>
+            <td>${formatNumber(d['公域'])}</td>
+            <td>${formatNumber(d['私域'])}</td>
+            <td>${formatNumber(d['外部渠道'])}</td>
+            <td style="font-weight:600">${formatNumber(total)}</td>
+            <td class="pct-cell">
+                <span style="color:#5b8ff9">公${pPub.toFixed(1)}%</span>
+                <span style="color:#5ad8a6">私${pPri.toFixed(1)}%</span>
+                <span style="color:#f6bd16">外${pExt.toFixed(1)}%</span>
+            </td>
+        </tr>`;
+    }
+    tbody.innerHTML = html;
+}
+
+// ===== 场景3 表格: 日订单量趋势数据表 =====
+function renderDailyTable() {
+    const month = document.getElementById('cardMonthSelect').value;
+    const dd = DASHBOARD_DATA.daily_data[month];
+    const tbody = document.getElementById('dailyTableBody');
+    if (!dd || dd.days.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="color:#ccc;text-align:center;padding:16px;">所选月份无日订单数据</td></tr>';
+        return;
+    }
+    const [, mm] = month.split('-');
+    let html = '';
+    for (let i = 0; i < dd.days.length; i++) {
+        const day = dd.days[i];
+        const pub = dd['公域'][i];
+        const pri = dd['私域'][i];
+        const ext = dd['外部渠道'][i];
+        const total = pub + pri + ext;
+        const pPub = total ? (pub / total * 100) : 0;
+        const pPri = total ? (pri / total * 100) : 0;
+        const pExt = total ? (ext / total * 100) : 0;
+        html += `<tr>
+            <td>${Number(mm)}月${day}日</td>
+            <td>${formatNumber(pub)}</td>
+            <td>${formatNumber(pri)}</td>
+            <td>${formatNumber(ext)}</td>
+            <td style="font-weight:600">${formatNumber(total)}</td>
+            <td class="pct-cell">
+                <span style="color:#5b8ff9">公${pPub.toFixed(1)}%</span>
+                <span style="color:#5ad8a6">私${pPri.toFixed(1)}%</span>
+                <span style="color:#f6bd16">外${pExt.toFixed(1)}%</span>
+            </td>
+        </tr>`;
+    }
+    tbody.innerHTML = html;
+}
+
 // ===== 场景4: 投放点位月度订单量 =====
 function updateChannelChart() {
     const month = document.getElementById('cardMonthSelect').value;
@@ -925,6 +1094,7 @@ function init() {
         updateDailyChart();
         updateChannelChart();
         updateTopProductTable();
+        renderDailyTable();
     });
 
     document.querySelectorAll('#monthlyCheckboxGroup input').forEach(cb => {
@@ -950,6 +1120,8 @@ function init() {
     updateDailyChart();
     updateChannelChart();
     updateTopProductTable();
+    renderMonthlyTable();
+    renderDailyTable();
 }
 
 // 启动
