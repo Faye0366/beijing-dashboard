@@ -172,22 +172,23 @@
             margin-bottom: 20px;
         }
 
-        /* 图表与数据表并排 */
+        /* 图表与数据表并排（左图右表各占 50%，等高） */
         .chart-table-row {
             display: flex;
             gap: 20px;
-            align-items: flex-start;
+            align-items: stretch;
         }
 
         .trend-chart {
-            flex: 1 1 auto;
+            flex: 1 1 0;
             min-width: 0;
-            height: 320px;
+            height: 210px;
         }
 
         .trend-table-wrap {
-            flex: 0 0 400px;
-            max-height: 320px;
+            flex: 1 1 0;
+            min-width: 0;
+            max-height: 210px;
             overflow-y: auto;
             border: 1px solid #eee;
             border-radius: 8px;
@@ -486,11 +487,11 @@
                     <thead>
                         <tr>
                             <th>月份</th>
-                            <th>公域订单量</th>
-                            <th>私域订单量</th>
-                            <th>外部渠道订单量</th>
+                            <th>公域</th>
+                            <th>私域</th>
+                            <th>外部渠道</th>
                             <th>合计</th>
-                            <th>公域/私域/外部占比</th>
+                            <th>占比</th>
                         </tr>
                     </thead>
                     <tbody id="monthlyTableBody"></tbody>
@@ -517,11 +518,11 @@
                     <thead>
                         <tr>
                             <th>日期</th>
-                            <th>公域订单量</th>
-                            <th>私域订单量</th>
-                            <th>外部渠道订单量</th>
+                            <th>公域</th>
+                            <th>私域</th>
+                            <th>外部渠道</th>
                             <th>合计</th>
-                            <th>公域/私域/外部占比</th>
+                            <th>占比</th>
                         </tr>
                     </thead>
                     <tbody id="dailyTableBody"></tbody>
@@ -922,9 +923,7 @@ function renderMonthlyTable() {
             <td>${formatNumber(d['外部渠道'])}</td>
             <td style="font-weight:600">${formatNumber(total)}</td>
             <td class="pct-cell">
-                <span style="color:#5b8ff9">公${pPub.toFixed(1)}%</span>
-                <span style="color:#5ad8a6">私${pPri.toFixed(1)}%</span>
-                <span style="color:#f6bd16">外${pExt.toFixed(1)}%</span>
+                <span style="color:#5b8ff9">${pPub.toFixed(1)}</span>:<span style="color:#5ad8a6">${pPri.toFixed(1)}</span>:<span style="color:#f6bd16">${pExt.toFixed(1)}</span>
             </td>
         </tr>`;
     }
@@ -958,9 +957,7 @@ function renderDailyTable() {
             <td>${formatNumber(ext)}</td>
             <td style="font-weight:600">${formatNumber(total)}</td>
             <td class="pct-cell">
-                <span style="color:#5b8ff9">公${pPub.toFixed(1)}%</span>
-                <span style="color:#5ad8a6">私${pPri.toFixed(1)}%</span>
-                <span style="color:#f6bd16">外${pExt.toFixed(1)}%</span>
+                <span style="color:#5b8ff9">${pPub.toFixed(1)}</span>:<span style="color:#5ad8a6">${pPri.toFixed(1)}</span>:<span style="color:#f6bd16">${pExt.toFixed(1)}</span>
             </td>
         </tr>`;
     }
