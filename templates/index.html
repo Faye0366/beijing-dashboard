@@ -408,12 +408,21 @@
             .charts-row {
                 grid-template-columns: 1fr;
             }
+            /* 窄屏：上图下表，图表保持固定高度不塌缩，表格限高+右侧滚动条 */
             .chart-table-row {
                 flex-direction: column;
+                align-items: stretch;
+            }
+            .trend-chart {
+                flex: none;
+                width: 100%;
+                height: 210px;
             }
             .trend-table-wrap {
-                flex: 1 1 auto;
-                max-height: none;
+                flex: none;
+                width: 100%;
+                max-height: 320px;
+                overflow-y: auto;
             }
             .header {
                 flex-direction: column;
