@@ -201,9 +201,9 @@
             font-size: 12px;
         }
 
-        /* 列宽：月份收窄；公域/私域/外部渠道/合计等宽；占比加宽 */
+        /* 列宽：月份收窄；公域/私域/外部渠道/合计等宽；占比显著加宽 */
         .trend-data-table th:nth-child(1),
-        .trend-data-table td:nth-child(1) { width: 16%; }
+        .trend-data-table td:nth-child(1) { width: 15%; }
         .trend-data-table th:nth-child(2),
         .trend-data-table td:nth-child(2),
         .trend-data-table th:nth-child(3),
@@ -211,9 +211,9 @@
         .trend-data-table th:nth-child(4),
         .trend-data-table td:nth-child(4),
         .trend-data-table th:nth-child(5),
-        .trend-data-table td:nth-child(5) { width: 14%; }
+        .trend-data-table td:nth-child(5) { width: 13%; }
         .trend-data-table th:nth-child(6),
-        .trend-data-table td:nth-child(6) { width: 28%; }
+        .trend-data-table td:nth-child(6) { width: 33%; }
 
         .trend-data-table thead th {
             position: sticky;
@@ -938,7 +938,7 @@ function renderMonthlyTable() {
             <td>${formatNumber(d['外部渠道'])}</td>
             <td style="font-weight:600">${formatNumber(total)}</td>
             <td class="pct-cell">
-                <span style="color:#5b8ff9">${pPub.toFixed(1)}</span>:<span style="color:#5ad8a6">${pPri.toFixed(1)}</span>:<span style="color:#f6bd16">${pExt.toFixed(1)}</span>
+                <span style="color:#5b8ff9">${pPub.toFixed(1)}</span>&nbsp;:&nbsp;<span style="color:#5ad8a6">${pPri.toFixed(1)}</span>&nbsp;:&nbsp;<span style="color:#f6bd16">${pExt.toFixed(1)}</span>
             </td>
         </tr>`;
     }
@@ -972,7 +972,7 @@ function renderDailyTable() {
             <td>${formatNumber(ext)}</td>
             <td style="font-weight:600">${formatNumber(total)}</td>
             <td class="pct-cell">
-                <span style="color:#5b8ff9">${pPub.toFixed(1)}</span>:<span style="color:#5ad8a6">${pPri.toFixed(1)}</span>:<span style="color:#f6bd16">${pExt.toFixed(1)}</span>
+                <span style="color:#5b8ff9">${pPub.toFixed(1)}</span>&nbsp;:&nbsp;<span style="color:#5ad8a6">${pPri.toFixed(1)}</span>&nbsp;:&nbsp;<span style="color:#f6bd16">${pExt.toFixed(1)}</span>
             </td>
         </tr>`;
     }
