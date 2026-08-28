@@ -196,9 +196,24 @@
 
         .trend-data-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             font-size: 12px;
         }
+
+        /* 列宽：月份收窄；公域/私域/外部渠道/合计等宽；占比加宽 */
+        .trend-data-table th:nth-child(1),
+        .trend-data-table td:nth-child(1) { width: 16%; }
+        .trend-data-table th:nth-child(2),
+        .trend-data-table td:nth-child(2),
+        .trend-data-table th:nth-child(3),
+        .trend-data-table td:nth-child(3),
+        .trend-data-table th:nth-child(4),
+        .trend-data-table td:nth-child(4),
+        .trend-data-table th:nth-child(5),
+        .trend-data-table td:nth-child(5) { width: 14%; }
+        .trend-data-table th:nth-child(6),
+        .trend-data-table td:nth-child(6) { width: 28%; }
 
         .trend-data-table thead th {
             position: sticky;
