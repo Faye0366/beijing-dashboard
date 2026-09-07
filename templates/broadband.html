@@ -632,19 +632,38 @@ function calcYoYMonth(month) {
     return res;
 }
 
-// ===== 业务类型环比/同比（月度整月对比） =====
+// ===== 业务类型环比（日对齐，同期对比：当月 N 天 vs 上月前 N 天） =====
 function calcBizMoM(biz, month) {
-    const cur = getBiz(month) ? getBiz(month)[biz] : 0;
-    const prev = getBiz(getPrevMonth(month));
-    const pv = prev ? prev[biz] : 0;
-    return pv > 0 ? ((cur - pv) / pv) * 100 : null;
+    const cur = DASHBOARD_DATA.daily_biz_data[month];
+    if (!cur || !cur.days || cur.days.length === 0) return null;
+    const dayCount = cur.days.length;
+    let curSum = 0;
+    for (const v of cur[biz]) curSum += v;
+    const prev = getPrevMonth(month);
+    const prevD = DASHBOARD_DATA.daily_biz_data[prev];
+    if (!prevD || !prevD.days || prevD.days.length === 0) return null;
+    const n = Math.min(dayCount, prevD.days.length);
+    let s = 0;
+    for (let i = 0; i < n; i++) s += prevD[biz][i];
+    return s > 0 ? ((curSum - s) / s) * 100 : null;
 }
 
+// ===== 业务类型同比（日对齐，同期对比：当月 N 天 vs 去年同月前 N 天） =====
 function calcBizYoY(biz, month) {
-    const cur = getBiz(month) ? getBiz(month)[biz] : 0;
-    const ly = getBiz(getLastYearMonth(month));
-    const lv = ly ? ly[biz] : 0;
-    return lv > 0 ? ((cur - lv) / lv) * 100 : null;
+    const cur = DASHBOARD_DATA.daily_biz_data[month];
+    if (!cur || !cur.days || cur.days.length === 0) return null;
+    const [y, mo] = month.split('-').map(Number);
+    const dayCount = cur.days.length;
+    let curSum = 0;
+    for (const v of cur[biz]) curSum += v;
+    const ly = y - 1;
+    const lastMonth = `${ly}-${String(mo).padStart(2, '0')}`;
+    const lastD = DASHBOARD_DATA.daily_biz_data[lastMonth];
+    if (!lastD || !lastD.days || lastD.days.length === 0) return null;
+    const n = Math.min(dayCount, lastD.days.length);
+    let s = 0;
+    for (let i = 0; i < n; i++) s += lastD[biz][i];
+    return s > 0 ? ((curSum - s) / s) * 100 : null;
 }
 
 // ===== 年累计业务类型（按所选月份当年 1月~所选月 累加） =====

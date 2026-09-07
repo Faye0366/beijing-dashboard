@@ -35,6 +35,7 @@ def main():
     monthly = defaultdict(lambda: {"total": 0, "公域": 0, "私域": 0})
     daily = defaultdict(lambda: defaultdict(lambda: {"total": 0, "公域": 0, "私域": 0}))
     biz_monthly = defaultdict(lambda: {b: 0 for b in BIZ_TYPES})
+    daily_biz = defaultdict(lambda: defaultdict(lambda: {b: 0 for b in BIZ_TYPES}))
     public_top5 = defaultdict(lambda: defaultdict(int))   # month -> product(B) -> count
     private_top5 = defaultdict(lambda: defaultdict(int))
     biz_top3 = defaultdict(lambda: {b: defaultdict(int) for b in BIZ_TYPES})  # month -> biz -> product(B) -> count
@@ -93,6 +94,7 @@ def main():
         # 业务类型月度
         if t in BIZ_TYPES:
             biz_monthly[month_key][t] += success
+            daily_biz[month_key][day_key][t] += success
 
         # TOP5 产品（按 B 列，按月，按 U 域）
         if u == "公域":
@@ -137,6 +139,16 @@ def main():
 
     biz_monthly_data = {m: dict(biz_monthly[m]) for m in months}
 
+    daily_biz_data = {}
+    for m in months:
+        days = sorted(daily_biz[m].keys())
+        daily_biz_data[m] = {
+            "days": [d for d in days],
+            "宽带新装": [daily_biz[m][d]["宽带新装"] for d in days],
+            "宽带续费": [daily_biz[m][d]["宽带续费"] for d in days],
+            "宽带提速": [daily_biz[m][d]["宽带提速"] for d in days],
+        }
+
     def topn(src, n):
         return [{"name": k, "value": v} for k, v in sorted(src.items(), key=lambda x: x[1], reverse=True)[:n]]
 
@@ -151,6 +163,7 @@ def main():
         "biz_types": BIZ_TYPES,
         "monthly_data": monthly_data,
         "daily_data": daily_data,
+        "daily_biz_data": daily_biz_data,
         "biz_monthly": biz_monthly_data,
         "public_top5": public_top5_data,
         "private_top5": private_top5_data,
