@@ -15,7 +15,7 @@ from collections import defaultdict
 import openpyxl
 
 # ===== 配置 =====
-EXCEL_PATH = r"C:\Users\Faye\Desktop\WorkBuddy数据看板\北京业务数据统计.xlsx"
+EXCEL_PATH = r"C:\Users\Faye\Desktop\WorkBuddy数据看板\北京业务数据看板\北京业务数据统计.xlsx"
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 SHEET_NAME = "流量套餐数据源"
 HTML_TEMPLATE = os.path.join(OUTPUT_DIR, "templates", "broadband.html")
