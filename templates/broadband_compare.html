@@ -366,12 +366,41 @@
                 align-items: flex-start;
             }
         }
-    </style>
+            /* ===== 返回统一入口主页图标 ===== */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .home-link:hover {
+            background: rgba(255, 255, 255, 0.32);
+            transform: translateY(-1px);
+        }
+</style>
 </head>
 <body>
 
 <div class="header">
-    <h1>北京移动宽带业务数据对比分析</h1>
+    <div class="header-left">
+        <a class="home-link" href="https://faye0366.github.io/dashboard-portal/" title="返回统一入口主页">🏠</a>
+        <h1>北京移动宽带业务数据对比分析</h1>
+    </div>
     <div style="display:flex;align-items:center;gap:16px;">
         <a href="broadband.html" style="padding:6px 18px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:6px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">← 返回看板</a>
         <span class="update-time" id="updateTime"></span>
