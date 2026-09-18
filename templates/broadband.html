@@ -85,7 +85,7 @@
             order: 3;
         }
 
-        .metric-card.total .value { color: #667eea; }
+        .metric-card.total .value { color: #c98a6b; }
         .metric-card.public .value { color: #e85d6a; }
         .metric-card.private .value { color: #3ba272; }
         .metric-card.yearly .value { color: #9c27b0; }
@@ -117,25 +117,25 @@
 
         /* 当月总量（整体/公域/私域）：蓝色左边框 */
         .metric-card.current {
-            border-left: 3px solid #667eea;
+            border-left: 3px solid #c98a6b;
         }
-        .metric-card.current .value { color: #667eea; }
+        .metric-card.current .value { color: #c98a6b; }
         .metric-card.current .label::before {
             content: "当月 · ";
             font-size: 12px;
-            color: #667eea;
+            color: #c98a6b;
             font-weight: 600;
         }
 
         /* 业务类型卡片（当月）：橙色主题 */
         .metric-card.biz:not(.yearly) {
-            border-left: 3px solid #ff9800;
+            border-left: 3px solid #c98a6b;
         }
         .metric-card.biz:not(.yearly) .value { color: #ff7043; }
         .metric-card.biz:not(.yearly) .label::before {
             content: "业务 · ";
             font-size: 12px;
-            color: #ff9800;
+            color: #c98a6b;
             font-weight: 600;
         }
 
@@ -218,7 +218,7 @@
         }
 
         .chart-controls select:focus {
-            border-color: #ff9800;
+            border-color: #c98a6b;
         }
 
         .checkbox-group {
@@ -239,7 +239,7 @@
 
         .checkbox-item input[type="checkbox"] {
             cursor: pointer;
-            accent-color: #ff9800;
+            accent-color: #c98a6b;
         }
 
         .chart-container {
@@ -303,7 +303,7 @@
         .top-product-table .rank-1 { background: #e85d6a; }
         .top-product-table .rank-2 { background: #fac858; }
         .top-product-table .rank-3 { background: #3ba272; }
-        .top-product-table .rank-4 { background: #667eea; }
+        .top-product-table .rank-4 { background: #c98a6b; }
         .top-product-table .rank-5 { background: #9c27b0; }
 
         .top-product-table .product-name {
@@ -506,7 +506,7 @@ let monthlyChart, dailyChart;
 
 // ===== 颜色配置 =====
 const COLORS = {
-    total: '#667eea',
+    total: '#c98a6b',
     '公域': '#e85d6a',
     '私域': '#3ba272'
 };
