@@ -311,6 +311,66 @@
             accent-color: #667eea;
         }
 
+        /* ===== 日趋势：对比模式切换按钮 ===== */
+        .chart-header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .mode-toggle {
+            display: inline-flex;
+            border: 1px solid #d6d9e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            border: none;
+            background: #fff;
+            color: #667eea;
+            font-size: 13px;
+            padding: 6px 14px;
+            cursor: pointer;
+            outline: none;
+            transition: background .15s, color .15s;
+        }
+
+        .mode-btn + .mode-btn {
+            border-left: 1px solid #d6d9e6;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: #fff;
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: #f0f2fb;
+        }
+
+        .compare-note {
+            margin: -4px 0 12px;
+            font-size: 12px;
+            color: #c0392b;
+        }
+
+        .table-block-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            padding: 8px 6px 4px;
+            background: #f7f8fa;
+            border-bottom: 1px solid #e8e8e8;
+            position: sticky;
+            top: 0;
+        }
+
+        .daily-table-gap {
+            height: 10px;
+        }
+
         .chart-container {
             width: 100%;
             height: 190px;
@@ -557,29 +617,24 @@
     <div class="chart-section">
         <div class="chart-header">
             <div class="chart-title">日订单量趋势</div>
-            <div class="checkbox-group" id="dailyCheckboxGroup">
-                <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
-                <label class="checkbox-item"><input type="checkbox" value="公域" checked> 公域</label>
-                <label class="checkbox-item"><input type="checkbox" value="私域" checked> 私域</label>
-                <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
+            <div class="chart-header-right">
+                <div class="mode-toggle" id="dailyModeToggle">
+                    <button type="button" class="mode-btn active" data-mode="mom">月环比（与上月）</button>
+                    <button type="button" class="mode-btn" data-mode="yoy">同比（与去年同月）</button>
+                </div>
+                <div class="checkbox-group" id="dailyCheckboxGroup">
+                    <label class="checkbox-item"><input type="checkbox" value="total" checked> 整体</label>
+                    <label class="checkbox-item"><input type="checkbox" value="公域"> 公域</label>
+                    <label class="checkbox-item"><input type="checkbox" value="私域"> 私域</label>
+                    <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
+                </div>
             </div>
         </div>
+        <div id="dailyCompareNote" class="compare-note" style="display:none;"></div>
         <div class="chart-table-row">
             <div class="chart-container trend-chart" id="dailyChart"></div>
             <div class="trend-table-wrap">
-                <table class="trend-data-table">
-                    <thead>
-                        <tr>
-                            <th>日期</th>
-                            <th>公域</th>
-                            <th>私域</th>
-                            <th>外部渠道</th>
-                            <th>合计</th>
-                            <th>占比</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dailyTableBody"></tbody>
-                </table>
+                <div id="dailyTableWrap"></div>
             </div>
         </div>
     </div>
@@ -628,6 +683,24 @@ function formatNumber(n) {
 
 function getDomainColor(domain) {
     return COLORS[domain] || '#999';
+}
+
+// ===== 日趋势对比期：上月 / 去年同月 =====
+let dailyCompareMode = 'mom'; // 'mom' = 月环比(上月), 'yoy' = 同比(去年同月)
+
+function getPrevMonth(m) {
+    const [y, mm] = m.split('-').map(Number);
+    if (mm === 1) return (y - 1) + '-12';
+    return y + '-' + String(mm - 1).padStart(2, '0');
+}
+
+function getLastYearSameMonth(m) {
+    const [y, mm] = m.split('-').map(Number);
+    return (y - 1) + '-' + String(mm).padStart(2, '0');
+}
+
+function getCompareMonth(m) {
+    return dailyCompareMode === 'mom' ? getPrevMonth(m) : getLastYearSameMonth(m);
 }
 
 // ===== 环比计算：当月截至最后一天 vs 上月同期(1日~同一天数) =====
@@ -899,43 +972,77 @@ function updateMonthlyChart() {
     monthlyChart.setOption(option, true);
 }
 
-// ===== 场景3: 日订单量趋势 =====
+// ===== 场景3: 日订单量趋势（含对比期：上月/去年同月）=====
 function updateDailyChart() {
     const month = document.getElementById('cardMonthSelect').value;
     const checked = Array.from(document.querySelectorAll('#dailyCheckboxGroup input:checked')).map(cb => cb.value);
     const dailyData = DASHBOARD_DATA.daily_data[month];
     if (!dailyData) return;
 
-    const days = dailyData.days;
-    const xLabels = days.map(d => d + '日');
+    // 对比期（整月），本月仅到当前日
+    const cmpKey = getCompareMonth(month);
+    const cmpData = DASHBOARD_DATA.daily_data[cmpKey];
+    const curDays = dailyData.days;
+    const cmpDays = cmpData ? cmpData.days : [];
+    const maxDays = Math.max(curDays.length, cmpDays.length);
 
-    const series = checked.map(domain => ({
-        name: domain === 'total' ? '整体' : domain,
-        type: 'line',
-        data: dailyData[domain],
-        smooth: true,
-        symbol: 'circle',
-        symbolSize: 5,
-        itemStyle: { color: getDomainColor(domain) },
-        lineStyle: { width: 2 },
-        areaStyle: checked.length === 1 ? { opacity: 0.15 } : undefined,
-    }));
+    const xLabels = [];
+    for (let i = 1; i <= maxDays; i++) xLabels.push(i + '日');
+
+    const curLabel = month.replace('-', '年') + '月';
+    const cmpLabel = cmpData ? (cmpKey.replace('-', '年') + '月') : '';
+
+    const series = [];
+    const legendNames = [];
+    checked.forEach(domain => {
+        const dname = domain === 'total' ? '整体' : domain;
+        // 本月（实线）
+        series.push({
+            name: dname + '（本月）',
+            type: 'line',
+            data: curDays.map((_, i) => dailyData[domain][i]),
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 5,
+            itemStyle: { color: getDomainColor(domain) },
+            lineStyle: { width: 2 },
+            connectNulls: false,
+        });
+        legendNames.push(dname + '（本月）');
+        // 对比期（虚线）
+        if (cmpData) {
+            series.push({
+                name: dname + '（' + cmpLabel + '）',
+                type: 'line',
+                data: cmpDays.map((_, i) => cmpData[domain][i]),
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 4,
+                itemStyle: { color: getDomainColor(domain) },
+                lineStyle: { width: 2, type: 'dashed' },
+                connectNulls: false,
+            });
+            legendNames.push(dname + '（' + cmpLabel + '）');
+        }
+    });
 
     const option = {
         tooltip: {
             trigger: 'axis',
             formatter: function(params) {
-                let html = `${month.replace('-', '年')}月 ${params[0].name}<br/>`;
+                let html = `${params[0].name}<br/>`;
                 params.forEach(p => {
+                    if (p.value === null || p.value === undefined) return;
                     html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
                 });
                 return html;
             }
         },
         legend: {
-            data: checked.map(d => d === 'total' ? '整体' : d),
+            data: legendNames,
             top: 0,
             right: 0,
+            type: 'scroll',
         },
         grid: { left: 60, right: 30, top: 40, bottom: 50 },
         xAxis: {
@@ -957,6 +1064,16 @@ function updateDailyChart() {
     };
 
     dailyChart.setOption(option, true);
+
+    // 对比期缺失提示
+    const noteEl = document.getElementById('dailyCompareNote');
+    if (!cmpData) {
+        noteEl.textContent = '提示：对比期（' + (dailyCompareMode === 'mom' ? '上月' : '去年同月') + ' ' + cmpKey + '）无数据，仅展示本月。';
+        noteEl.style.display = '';
+    } else {
+        noteEl.textContent = '';
+        noteEl.style.display = 'none';
+    }
 }
 
 // ===== 场景2 表格: 每月订单量趋势数据表 =====
@@ -983,17 +1100,38 @@ function renderMonthlyTable() {
     tbody.innerHTML = html;
 }
 
-// ===== 场景3 表格: 日订单量趋势数据表 =====
+// ===== 场景3 表格: 日订单量趋势数据表（本月 + 对比月 上下分组）=====
 function renderDailyTable() {
     const month = document.getElementById('cardMonthSelect').value;
     const dd = DASHBOARD_DATA.daily_data[month];
-    const tbody = document.getElementById('dailyTableBody');
+    const wrap = document.getElementById('dailyTableWrap');
     if (!dd || dd.days.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="color:#ccc;text-align:center;padding:16px;">所选月份无日订单数据</td></tr>';
+        wrap.innerHTML = '<div style="color:#ccc;text-align:center;padding:16px;">所选月份无日订单数据</div>';
         return;
     }
-    const [, mm] = month.split('-');
+
+    const cmpKey = getCompareMonth(month);
+    const cmpData = DASHBOARD_DATA.daily_data[cmpKey];
+
     let html = '';
+    html += '<div class="table-block-title">本月（' + (month.replace('-', '年') + '月') + '）</div>';
+    html += buildDailyTableBlock(dd, month);
+
+    if (cmpData) {
+        html += '<div class="daily-table-gap"></div>';
+        html += '<div class="table-block-title">对比期（' + (cmpKey.replace('-', '年') + '月') + '）</div>';
+        html += buildDailyTableBlock(cmpData, cmpKey);
+    } else {
+        html += '<div class="daily-table-gap"></div>';
+        html += '<div class="table-block-title" style="color:#c0392b;">对比期（' + (dailyCompareMode === 'mom' ? '上月' : '去年同月') + ' ' + cmpKey + '）无数据</div>';
+    }
+
+    wrap.innerHTML = html;
+}
+
+function buildDailyTableBlock(dd, monthStr) {
+    const [, mm] = monthStr.split('-');
+    let rows = '';
     for (let i = 0; i < dd.days.length; i++) {
         const day = dd.days[i];
         const pub = dd['公域'][i];
@@ -1003,7 +1141,7 @@ function renderDailyTable() {
         const pPub = total ? (pub / total * 100) : 0;
         const pPri = total ? (pri / total * 100) : 0;
         const pExt = total ? (ext / total * 100) : 0;
-        html += `<tr>
+        rows += `<tr>
             <td>${Number(mm)}月${day}日</td>
             <td>${formatNumber(pub)}</td>
             <td>${formatNumber(pri)}</td>
@@ -1014,7 +1152,10 @@ function renderDailyTable() {
             </td>
         </tr>`;
     }
-    tbody.innerHTML = html;
+    return `<table class="trend-data-table">
+        <thead><tr><th>日期</th><th>公域</th><th>私域</th><th>外部渠道</th><th>合计</th><th>占比</th></tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
 }
 
 // ===== 场景4: 投放点位月度订单量 =====
@@ -1152,6 +1293,16 @@ function init() {
     });
     document.querySelectorAll('#dailyCheckboxGroup input').forEach(cb => {
         cb.addEventListener('change', updateDailyChart);
+    });
+    document.querySelectorAll('#dailyModeToggle .mode-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.classList.contains('active')) return;
+            document.querySelectorAll('#dailyModeToggle .mode-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            dailyCompareMode = this.getAttribute('data-mode');
+            updateDailyChart();
+            renderDailyTable();
+        });
     });
     document.querySelectorAll('#channelCheckboxGroup input').forEach(cb => {
         cb.addEventListener('change', updateChannelChart);
