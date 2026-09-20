@@ -1009,7 +1009,7 @@ function updateDailyChart() {
             connectNulls: false,
         });
         legendNames.push(dname + '（本月）');
-        // 对比期（虚线）
+        // 对比期（虚线 + 浅色，沿用「按年对比」的去年浅色规则 opacity:0.35）
         if (cmpData) {
             series.push({
                 name: dname + '（' + cmpLabel + '）',
@@ -1018,8 +1018,8 @@ function updateDailyChart() {
                 smooth: true,
                 symbol: 'circle',
                 symbolSize: 4,
-                itemStyle: { color: getDomainColor(domain) },
-                lineStyle: { width: 2, type: 'dashed' },
+                itemStyle: { color: getDomainColor(domain), opacity: 0.35 },
+                lineStyle: { width: 2, type: 'dashed', opacity: 0.35 },
                 connectNulls: false,
             });
             legendNames.push(dname + '（' + cmpLabel + '）');
