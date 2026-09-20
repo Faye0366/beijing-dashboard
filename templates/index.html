@@ -380,6 +380,67 @@
             height: 225px;
         }
 
+        /* ===== 场景4：投放点位 左表(70%) 右饼(30%) ===== */
+        .channel-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .channel-table-wrap {
+            flex: 1 1 68%;
+            min-width: 0;
+            overflow-x: auto;
+        }
+        .channel-pie {
+            flex: 0 0 30%;
+            min-width: 240px;
+            height: 460px;
+        }
+        .channel-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            table-layout: fixed;
+        }
+        .channel-data-table thead th {
+            background: #f7f8fa;
+            color: #555;
+            font-weight: 600;
+            padding: 8px 8px;
+            border-bottom: 1px solid #e8e8e8;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .channel-data-table thead th:first-child,
+        .channel-data-table thead th:nth-child(2) { text-align: left; }
+        .channel-data-table th:nth-child(1),
+        .channel-data-table td:nth-child(1) { width: 14%; }
+        .channel-data-table th:nth-child(2),
+        .channel-data-table td:nth-child(2) { width: 22%; text-align: left; }
+        .channel-data-table th:nth-child(3),
+        .channel-data-table td:nth-child(3) { width: 16%; }
+        .channel-data-table th:nth-child(4),
+        .channel-data-table td:nth-child(4),
+        .channel-data-table th:nth-child(5),
+        .channel-data-table td:nth-child(5) { width: 24%; }
+        .channel-data-table tbody td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #f2f2f2;
+            text-align: right;
+            white-space: nowrap;
+            color: #444;
+        }
+        .channel-data-table tbody td:first-child { text-align: left; color: #333; font-weight: 500; }
+        .channel-data-table tbody tr:hover { background: #fafbff; }
+        .channel-data-table .group-cell {
+            background: #fbfcfe;
+            font-weight: 600;
+            color: #333;
+            vertical-align: middle;
+        }
+        .channel-data-table .summary-row td { font-weight: 600; background: #f7f8fa; }
+        .channel-data-table .total-row td { font-weight: 700; background: #eef1f8; color: #222; }
+
         /* ===== TOP5 产品表格 ===== */
         .top-product-table-wrap {
             overflow-x: auto;
@@ -640,7 +701,7 @@
     </div>
 </div>
 
-<!-- ===== 场景4: 按投放点位展示每月公域私域订单量 ===== -->
+<!-- ===== 场景4: 各投放点位月度订单量（公域/私域） ===== -->
 <div class="chart-section">
     <div class="chart-header">
         <div class="chart-title">各投放点位月度订单量（公域 / 私域）</div>
@@ -650,7 +711,23 @@
             <label class="checkbox-item"><input type="checkbox" value="外部渠道"> 外部渠道</label>
         </div>
     </div>
-    <div class="chart-container tall" id="channelChart"></div>
+    <div class="channel-row">
+        <div class="channel-table-wrap">
+            <table class="channel-data-table">
+                <thead>
+                    <tr>
+                        <th>公/私域</th>
+                        <th>投放点位</th>
+                        <th>订单量</th>
+                        <th>总订单占比</th>
+                        <th>渠道占比</th>
+                    </tr>
+                </thead>
+                <tbody id="channelTableBody"></tbody>
+            </table>
+        </div>
+        <div class="chart-container channel-pie" id="channelChart"></div>
+    </div>
 </div>
 
 <!-- ===== 场景5: 各投放点位 TOP5 产品（表格） ===== -->
@@ -1158,62 +1235,154 @@ function buildDailyTableBlock(dd, monthStr) {
     </table>`;
 }
 
-// ===== 场景4: 投放点位月度订单量 =====
+// ===== 场景4: 投放点位月度订单量（饼图 + 分组表格） =====
+// 饼图切片固定顺序；双V/抖音 合并为「其他」
+const CHANNEL_PIE_SLICE_ORDER = ['充流量', '移动营业厅', '权益tab', '承接页', '小程序', '生活号', '京东', '天猫', '其他'];
+const CHANNEL_POINT_TO_SLICE = {
+    '充流量': '充流量',
+    '移动营业厅': '移动营业厅',
+    '权益tab': '权益tab',
+    '承接页': '承接页',
+    '小程序': '小程序',
+    '生活号': '生活号',
+    '京东': '京东',
+    '天猫': '天猫',
+    '双V': '其他',
+    '抖音': '其他',
+};
+const CHANNEL_PIE_COLORS = ['#5b8ff9', '#5ad8a6', '#f6bd16', '#e8684a', '#6dc8ec', '#9270ca', '#ff9d4d', '#269a99', '#bbbbbb'];
+
 function updateChannelChart() {
     const month = document.getElementById('cardMonthSelect').value;
     const checked = Array.from(document.querySelectorAll('#channelCheckboxGroup input:checked')).map(cb => cb.value);
     const channelData = DASHBOARD_DATA.channel_data[month];
     if (!channelData) return;
 
-    // 过滤掉 total=0 的点位，并按 total 降序排列
-    const filtered = channelData.filter(d => d.total > 0).sort((a, b) => b.total - a.total);
-    const channels = filtered.map(d => d.channel);
+    // 按勾选域聚合到各切片
+    const sliceSum = {};
+    channelData.forEach(d => {
+        checked.forEach(dm => {
+            const v = d[dm] || 0;
+            if (v <= 0) return;
+            const slice = CHANNEL_POINT_TO_SLICE[d.channel] || d.channel;
+            sliceSum[slice] = (sliceSum[slice] || 0) + v;
+        });
+    });
 
-    const series = checked.map(domain => ({
-        name: domain,
-        type: 'bar',
-        data: filtered.map(d => d[domain]),
-        itemStyle: { color: getDomainColor(domain) },
-        stack: 'channel',
-    }));
+    const data = CHANNEL_PIE_SLICE_ORDER
+        .filter(s => (sliceSum[s] || 0) > 0)
+        .map(s => {
+            const idx = CHANNEL_PIE_SLICE_ORDER.indexOf(s);
+            return {
+                name: s,
+                value: sliceSum[s],
+                itemStyle: { color: CHANNEL_PIE_COLORS[idx % CHANNEL_PIE_COLORS.length] },
+            };
+        });
 
+    if (data.length === 0) {
+        channelChart.setOption({
+            title: { text: '请勾选公域/私域/外部渠道', left: 'center', top: 'center', textStyle: { color: '#bbb', fontSize: 13, fontWeight: 'normal' } },
+            series: [],
+        }, true);
+        return;
+    }
+
+    const grand = data.reduce((a, b) => a + b.value, 0);
     const option = {
         tooltip: {
-            trigger: 'axis',
-            axisPointer: { type: 'shadow' },
-            formatter: function(params) {
-                let html = `${month.replace('-', '年')}月<br/>`;
-                html += `<b>${params[0].name}</b><br/>`;
-                let total = 0;
-                params.forEach(p => {
-                    html += `${p.marker} ${p.seriesName}: <b>${formatNumber(p.value)}</b><br/>`;
-                    total += p.value;
-                });
-                html += `合计: <b>${formatNumber(total)}</b>`;
-                return html;
+            trigger: 'item',
+            formatter: function(p) {
+                return `${p.name}<br/>订单数：<b>${formatNumber(p.value)}</b><br/>占比：<b>${p.percent}%</b>`;
             }
         },
         legend: {
-            data: checked,
-            top: 0,
-            right: 0,
+            type: 'scroll',
+            orient: 'horizontal',
+            bottom: 0,
+            left: 'center',
+            itemWidth: 10,
+            itemHeight: 10,
+            textStyle: { fontSize: 11 },
         },
-        grid: { left: 100, right: 30, top: 40, bottom: 40 },
-        xAxis: {
-            type: 'value',
-            name: '订单量',
-            axisLabel: { formatter: function(v) { return formatNumber(v); } },
+        graphic: {
+            type: 'text',
+            left: 'center',
+            top: '43%',
+            style: {
+                text: '总计\n' + formatNumber(grand),
+                textAlign: 'center',
+                fill: '#666',
+                fontSize: 13,
+                lineHeight: 18,
+            }
         },
-        yAxis: {
-            type: 'category',
-            data: channels,
-            axisLabel: { fontSize: 12 },
-            inverse: true,
-        },
-        series: series,
+        series: [{
+            type: 'pie',
+            radius: ['42%', '68%'],
+            center: ['50%', '44%'],
+            avoidLabelOverlap: true,
+            label: { show: true, formatter: '{b}\n{d}%', fontSize: 11, color: '#555' },
+            labelLine: { length: 8, length2: 8 },
+            data: data,
+        }],
     };
-
     channelChart.setOption(option, true);
+}
+
+// ===== 场景4 表格：公/私域 | 投放点位 | 订单量 | 总订单占比 | 渠道占比（固定全量，不随勾选） =====
+function renderChannelTable() {
+    const month = document.getElementById('cardMonthSelect').value;
+    const cd = DASHBOARD_DATA.channel_data[month];
+    const tbody = document.getElementById('channelTableBody');
+    if (!cd) { tbody.innerHTML = ''; return; }
+
+    const domains = ['公域', '私域', '外部渠道'];
+    let grand = 0;
+    cd.forEach(r => { grand += (r.total || 0); });
+    const domTotal = {};
+    domains.forEach(dm => {
+        let s = 0;
+        cd.forEach(r => { s += (r[dm] || 0); });
+        domTotal[dm] = s;
+    });
+
+    let html = '';
+    html += `<tr class="total-row">
+        <td>总计</td>
+        <td>全部点位</td>
+        <td>${formatNumber(grand)}</td>
+        <td>--</td>
+        <td>--</td>
+    </tr>`;
+
+    domains.forEach(dm => {
+        const rows = cd.filter(r => (r[dm] || 0) > 0)
+            .map(r => ({ channel: r.channel, val: r[dm] }))
+            .sort((a, b) => b.val - a.val);
+        const dt = domTotal[dm];
+        const span = rows.length + 1;
+        html += `<tr class="summary-row">
+            <td class="group-cell" rowspan="${span}">${dm}</td>
+            <td>汇总</td>
+            <td>${formatNumber(dt)}</td>
+            <td>${grand ? (dt / grand * 100).toFixed(1) : '0'}%</td>
+            <td>100%</td>
+        </tr>`;
+        rows.forEach(rw => {
+            const zhan = grand ? (rw.val / grand * 100).toFixed(1) : '0';
+            const qudao = dt ? (rw.val / dt * 100).toFixed(1) : '0';
+            html += `<tr>
+                <td></td>
+                <td>${rw.channel}</td>
+                <td>${formatNumber(rw.val)}</td>
+                <td>${zhan}%</td>
+                <td>${qudao}%</td>
+            </tr>`;
+        });
+    });
+
+    tbody.innerHTML = html;
 }
 
 // ===== 场景5: 各投放点位 TOP5 产品（表格） =====
@@ -1284,6 +1453,7 @@ function init() {
         updateCards();
         updateDailyChart();
         updateChannelChart();
+        renderChannelTable();
         updateTopProductTable();
         renderDailyTable();
     });
@@ -1305,7 +1475,10 @@ function init() {
         });
     });
     document.querySelectorAll('#channelCheckboxGroup input').forEach(cb => {
-        cb.addEventListener('change', updateChannelChart);
+        cb.addEventListener('change', function() {
+            updateChannelChart();
+            renderChannelTable();
+        });
     });
 
     // 窗口resize
@@ -1320,6 +1493,7 @@ function init() {
     updateMonthlyChart();
     updateDailyChart();
     updateChannelChart();
+    renderChannelTable();
     updateTopProductTable();
     renderMonthlyTable();
     renderDailyTable();
