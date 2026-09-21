@@ -383,12 +383,13 @@
         /* ===== 场景4：投放点位 左表(70%) 右饼(30%) ===== */
         .channel-row {
             display: flex;
+            flex-wrap: wrap;
             gap: 20px;
             align-items: flex-start;
         }
         .channel-table-wrap {
             flex: 1 1 58%;
-            min-width: 0;
+            min-width: 340px;
             overflow-x: auto;
         }
         .channel-pie {
@@ -551,6 +552,20 @@
                 width: 100%;
                 max-height: 320px;
                 overflow-y: auto;
+            }
+            /* 窄屏：投放点位模块上表下图，避免环形图 min-width 把表格挤没 */
+            .channel-row {
+                flex-direction: column;
+            }
+            .channel-table-wrap {
+                flex: 1 1 100%;
+                order: 1;
+            }
+            .channel-pie {
+                flex: 1 1 100%;
+                min-width: 0;
+                order: 2;
+                height: 340px;
             }
             .header {
                 flex-direction: column;
