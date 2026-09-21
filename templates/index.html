@@ -406,11 +406,13 @@
             background: #f7f8fa;
             color: #555;
             font-weight: 600;
-            padding: 8px 8px;
+            padding: 8px 10px;
             border-bottom: 1px solid #e8e8e8;
+            border-left: 1px solid #e0e3ea;
             text-align: right;
             white-space: nowrap;
         }
+        .channel-data-table thead th:first-child { border-left: none; }
         .channel-data-table thead th:first-child,
         .channel-data-table thead th:nth-child(2) { text-align: left; }
         .channel-data-table th:nth-child(1),
@@ -424,12 +426,17 @@
         .channel-data-table th:nth-child(5),
         .channel-data-table td:nth-child(5) { width: 24%; }
         .channel-data-table tbody td {
-            padding: 6px 8px;
+            padding: 6px 10px;
             border-bottom: 1px solid #f2f2f2;
+            border-left: 1px solid #e8ebf1;
             text-align: right;
             white-space: nowrap;
             color: #444;
         }
+        .channel-data-table tbody td:first-child { text-align: left; color: #333; font-weight: 500; }
+        /* 最左缘（总计行首格 / 汇总行 group-cell）不加左边线，其余列间均有竖向分隔线 */
+        .channel-data-table tbody tr.summary-row td.group-cell,
+        .channel-data-table tbody tr.total-row td:first-child { border-left: none; }
         .channel-data-table tbody td:first-child { text-align: left; color: #333; font-weight: 500; }
         .channel-data-table tbody tr:hover { background: #fafbff; }
         .channel-data-table .group-cell {
