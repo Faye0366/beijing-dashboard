@@ -414,11 +414,11 @@
         .channel-data-table thead th:first-child,
         .channel-data-table thead th:nth-child(2) { text-align: left; }
         .channel-data-table th:nth-child(1),
-        .channel-data-table td:nth-child(1) { width: 14%; }
+        .channel-data-table td:nth-child(1) { width: 12%; }
         .channel-data-table th:nth-child(2),
-        .channel-data-table td:nth-child(2) { width: 22%; text-align: left; }
+        .channel-data-table td:nth-child(2) { width: 20%; text-align: left; }
         .channel-data-table th:nth-child(3),
-        .channel-data-table td:nth-child(3) { width: 16%; }
+        .channel-data-table td:nth-child(3) { width: 20%; }
         .channel-data-table th:nth-child(4),
         .channel-data-table td:nth-child(4),
         .channel-data-table th:nth-child(5),
@@ -1372,8 +1372,8 @@ function renderChannelTable() {
         rows.forEach(rw => {
             const zhan = grand ? (rw.val / grand * 100).toFixed(1) : '0';
             const qudao = dt ? (rw.val / dt * 100).toFixed(1) : '0';
+            // 注意：第一列已被汇总行的 group-cell rowspan 占据，此处不再输出空 td，否则会多出一列导致错位
             html += `<tr>
-                <td></td>
                 <td>${rw.channel}</td>
                 <td>${formatNumber(rw.val)}</td>
                 <td>${zhan}%</td>
