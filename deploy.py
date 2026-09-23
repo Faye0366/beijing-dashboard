@@ -14,6 +14,7 @@
 import subprocess
 import sys
 import os
+import shutil
 
 # 复用 process_data.py 的数据处理逻辑
 from process_data import main as process_data
@@ -21,18 +22,40 @@ from process_data_broadband import main as process_data_broadband
 
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 显式指定 SSH 命令路径，避免 DNS 解析问题
-# 如果系统 ssh 能正常解析 github.com，可注释掉下面这行
-SSH_COMMAND = r"C:\Users\Faye\.workbuddy\vendor\PortableGit\usr\bin\ssh.exe"
+
+def find_ssh():
+    """自动定位可用的 ssh.exe，避免硬编码路径失效（vendor 目录曾被清理）"""
+    candidates = []
+    # 1) WorkBuddy 自带的 PortableGit（任意版本目录）
+    base = r"C:\Users\Faye\.workbuddy\binaries\PortableGit"
+    if os.path.isdir(base):
+        for dp, _, fs in os.walk(base):
+            if "ssh.exe" in fs:
+                candidates.append(os.path.join(dp, "ssh.exe"))
+    # 2) 系统 OpenSSH
+    sys_ssh = r"C:\Windows\System32\OpenSSH\ssh.exe"
+    if os.path.exists(sys_ssh):
+        candidates.append(sys_ssh)
+    # 3) PATH 中的 ssh
+    p = shutil.which("ssh")
+    if p:
+        candidates.append(p)
+    # 4) 旧路径兜底
+    candidates.append(r"C:\Users\Faye\.workbuddy\vendor\PortableGit\usr\bin\ssh.exe")
+    for c in candidates:
+        if c and os.path.exists(c):
+            return c
+    return None
 
 
 def run_git(*args):
-    """执行 git 命令并打印输出"""
+    """执行 git 命令并打印输出，返回是否成功"""
     cmd = ["git"] + list(args)
     print(f"  $ {' '.join(cmd)}")
     env = os.environ.copy()
-    if os.path.exists(SSH_COMMAND):
-        env["GIT_SSH_COMMAND"] = f'"{SSH_COMMAND}"'
+    ssh = find_ssh()
+    if ssh:
+        env["GIT_SSH_COMMAND"] = f'"{ssh}"'
     result = subprocess.run(
         cmd, cwd=OUTPUT_DIR, capture_output=True, text=True, encoding="utf-8", env=env
     )
@@ -77,6 +100,7 @@ def main():
         print("\n  [警告] 推送失败，请检查 Git remote 配置")
         print("  如果尚未设置 remote，请运行:")
         print('    git remote add origin git@github.com:Faye0366/<仓库名>.git')
+        sys.exit(1)
 
 
 if __name__ == "__main__":
