@@ -2088,7 +2088,7 @@ function attrRenderDim(g2, g1, cats){
         legend:{data:['对比期','基准期'],top:0},
         grid:{left:8,right:18,top:30,bottom:10,containLabel:true},
         xAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
-        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11},axisTick:{show:false}},
+        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11},axisTick:{show:false},inverse:true},
         series:[
             {name:'对比期',type:'bar',data:v2,itemStyle:{color:'#667eea'}},
             {name:'基准期',type:'bar',data:v1,itemStyle:{color:'#3ba272'}}
