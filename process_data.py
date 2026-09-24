@@ -55,6 +55,8 @@ def main():
     product_detail = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
     all_products_set = set()
     all_dates_set = set()
+    # 扁平明细记录（用于波动归因模块）：每条 = 一天×一产品×一域×一点位 的订单
+    records = []
 
     row_count = 0
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=False):
@@ -141,11 +143,45 @@ def main():
         if not any(kw in unified_name for kw in EXCLUDE_KEYWORDS):
             product_detail[date_str][unified_name][domain][channel] += success
             all_products_set.add(unified_name)
+            records.append({
+                "date": date_str,
+                "ch": domain,
+                "point": channel,
+                "type": e_val if e_val else "未知",
+                "product": unified_name,
+                "orders": success,
+            })
         all_dates_set.add(date_str)
 
         row_count += 1
 
     print(f"处理完成，共 {row_count} 行数据")
+
+    # ===== 波动归因 records 压缩为索引数组（显著减小 HTML 体积） =====
+    ch_list = ['公域', '私域', '外部渠道']
+
+    # 固定优先排序：命中的按给定顺序排在最前，其余(新增)按字典序追加在最后
+    def priority_order(values, priority):
+        vals = set(values)
+        ordered = [v for v in priority if v in vals]
+        rest = sorted(vals - set(priority))
+        return ordered + rest
+
+    point_priority = ['充流量', '移动营业厅', '权益tab', '承接页', '小程序', '生活号', '京东', '天猫', '抖音', '双V']
+    type_priority = ['流量包', '套餐']
+    point_list = priority_order({r['point'] for r in records}, point_priority)
+    type_list = priority_order({r['type'] for r in records}, type_priority)
+    product_list = sorted({r['product'] for r in records})
+    ch_i = {v: i for i, v in enumerate(ch_list)}
+    point_i = {v: i for i, v in enumerate(point_list)}
+    type_i = {v: i for i, v in enumerate(type_list)}
+    product_i = {v: i for i, v in enumerate(product_list)}
+    date_i = {d: i for i, d in enumerate(sorted(all_dates_set))}
+    records_compact = [
+        [date_i[r['date']], ch_i[r['ch']], point_i[r['point']], type_i[r['type']], product_i[r['product']], r['orders']]
+        for r in records
+    ]
+    print(f"归因 records 压缩：{len(records_compact)} 条 -> 索引数组")
 
     # ===== 整理输出格式 =====
     months = sorted(monthly_orders.keys())
@@ -244,6 +280,8 @@ def main():
         "all_dates": sorted(all_dates_set),
         "all_channels": all_channels,
         "months": months,
+        "records": records_compact,
+        "records_meta": {"ch": ch_list, "point": point_list, "type": type_list, "product": product_list},
         "product_detail": {d: dict(v) for d, v in sorted(product_detail.items())},
         "cll_product_daily": {d: dict(v) for d, v in sorted(cll_product_daily.items())},
         "channel_public_daily": {d: {ch: dict(locs) for ch, locs in v.items()} for d, v in sorted(channel_public_daily.items())},

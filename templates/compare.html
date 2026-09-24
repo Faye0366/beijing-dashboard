@@ -453,6 +453,52 @@
             background: rgba(255, 255, 255, 0.32);
             transform: translateY(-1px);
         }
+
+        /* ===== 订单波动归因分析（新增模块） ===== */
+        .attr-controls { background:#fff; border-radius:12px; padding:16px 20px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .attr-controls .ctl-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+        .attr-controls .ctl-row:last-child { margin-bottom:0; }
+        .attr-controls label { font-size:14px; font-weight:600; color:#555; }
+        .attr-controls select, .attr-controls input[type="date"] { padding:6px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; outline:none; background:#fff; }
+        .attr-controls select:focus, .attr-controls input[type="date"]:focus { border-color:#667eea; }
+        .attr-btn { padding:8px 18px; background:#667eea; color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:background .2s; }
+        .attr-btn:hover { background:#5568d3; }
+        .attr-btn.ghost { background:#f5f6fa; color:#555; border:1px solid #ddd; }
+        .attr-btn.ghost:hover { background:#eceefb; }
+        .attr-export-msg { font-size:12.5px; margin-left:6px; align-self:center; color:#67737e; }
+        .attr-export-msg.ok { color:#3ba272; }
+        .attr-export-msg.err { color:#e85d6a; }
+        .attr-custom-dates { display:none; }
+        .attr-custom-dates.show { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+        .attr-filter-title { font-weight:700; color:#333; margin:6px 0 8px; font-size:14px; }
+        .attr-filter-hint { font-size:12.5px; color:#888; margin-bottom:8px; line-height:1.5; }
+        .attr-dimrow { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+        .attr-dim-label { font-size:13px; font-weight:600; color:#555; min-width:78px; padding-top:4px; }
+        .attr-chips { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
+        .attr-chip { display:inline-block; padding:3px 12px; border-radius:16px; font-size:12.5px; border:1px solid #d6dae5; background:#fff; color:#555; cursor:pointer; user-select:none; transition:all .15s; }
+        .attr-chip.on { background:#667eea; color:#fff; border-color:#667eea; }
+        .attr-linkbtn { font-size:12px; color:#667eea; cursor:pointer; padding-top:4px; }
+        .attr-linkbtn:hover { text-decoration:underline; }
+        .attr-segline { font-size:13px; color:#555; margin:8px 0 0; padding:8px 12px; background:#f6f7fb; border-radius:8px; }
+        .attr-kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px; }
+        .attr-kpi { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #667eea; }
+        .attr-kpi.k-up { border-left-color:#e85d6a; }
+        .attr-kpi.k-down { border-left-color:#3ba272; }
+        .attr-kpi .lab { font-size:12px; color:#888; }
+        .attr-kpi .num { font-size:24px; font-weight:800; color:#333; margin-top:4px; }
+        .attr-kpi .num.up { color:#e85d6a; }
+        .attr-kpi .num.down { color:#3ba272; }
+        .attr-kpi .meta { font-size:11px; color:#aaa; margin-top:2px; }
+        .attr-conclusion { background:#fff; border-radius:12px; padding:16px 20px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.06); line-height:1.8; font-size:14px; color:#333; }
+        .attr-conclusion h3 { font-size:15px; margin-bottom:8px; color:#333; }
+        .attr-conclusion .tag { display:inline-block; background:#eef2ff; color:#5568d3; border-radius:6px; padding:1px 8px; font-size:12px; font-weight:600; margin-right:4px; }
+        .attr-conclusion .hl-up { color:#e85d6a; font-weight:600; }
+        .attr-conclusion .hl-down { color:#3ba272; font-weight:600; }
+        .attr-charts-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+        .attr-chart-box { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .attr-chart-box h4 { font-size:13.5px; color:#333; margin-bottom:8px; font-weight:600; }
+        .attr-chart { width:100%; height:300px; }
+        @media (max-width:880px){ .attr-kpi-grid{grid-template-columns:repeat(2,1fr);} .attr-charts-grid{grid-template-columns:1fr;} }
 </style>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 </head>
@@ -661,6 +707,59 @@
             </thead>
             <tbody id="mallYytTbody"></tbody>
         </table>
+    </div>
+</div>
+
+<!-- ===== 订单波动归因分析（新增模块） ===== -->
+<div class="table-section" id="attrSection">
+    <div class="table-title">订单波动归因分析（多维组合筛选 · 实时下钻）</div>
+
+    <div class="attr-controls">
+        <div class="ctl-row">
+            <label>对比模式</label>
+            <select id="attrMode">
+                <option value="mom_mtd">环比（本月 vs 上月同期）</option>
+                <option value="mom_7d">环比（近7天 vs 前7天）</option>
+                <option value="mom">环比（近30天 vs 前30天）</option>
+                <option value="yoy">同比（今年累计 vs 去年累计）</option>
+                <option value="custom">自定义双时间段</option>
+            </select>
+            <label>拆解维度</label>
+            <select id="attrBreak">
+                <option value="product">统一产品名</option>
+                <option value="point" selected>投放点位</option>
+                <option value="ch">渠道（公/私域/外部）</option>
+                <option value="type">类型</option>
+            </select>
+            <button class="attr-btn ghost" id="attrRecompute">重新分析</button>
+            <button class="attr-btn" id="attrHtml">导出 HTML 报告</button>
+            <button class="attr-btn" id="attrWord">下载 Word</button>
+            <button class="attr-btn" id="attrPdf">下载 PDF</button>
+            <span class="attr-export-msg" id="attrExportMsg"></span>
+        </div>
+
+        <div class="attr-custom-dates" id="attrCustomDates">
+            <div class="ctl-row">
+                <label>对比期 起</label><input type="date" id="attrT2s">
+                <label>对比期 止</label><input type="date" id="attrT2e">
+                <label>基准期 起</label><input type="date" id="attrT1s">
+                <label>基准期 止</label><input type="date" id="attrT1e">
+            </div>
+        </div>
+
+        <div class="attr-filter-title">🔎 筛选范围（多维度组合，框定要分析的业务段）</div>
+        <div class="attr-filter-hint">每个维度可多选；留空=不限制该维度，可任意叠加。例如：渠道=公域+私域，或 类型=套餐，或 渠道=公域 ∧ 类型=套餐 ∧ 产品=某产品。</div>
+        <div id="attrFilterRows"></div>
+        <div class="attr-segline" id="attrSegLine"></div>
+    </div>
+
+    <div class="attr-kpi-grid" id="attrKpi"></div>
+    <div class="attr-conclusion" id="attrConclusion"></div>
+    <div class="attr-charts-grid">
+        <div class="attr-chart-box"><h4>① 趋势对比（对比期 vs 基准期，按各自天数对齐）</h4><div class="attr-chart" id="attrTrend"></div></div>
+        <div class="attr-chart-box"><h4>② 维度对比（各分项 T1 vs T2 订单量）</h4><div class="attr-chart" id="attrDim"></div></div>
+        <div class="attr-chart-box"><h4>③ 贡献排名（各分项对总波动的拉动，红涨绿跌）</h4><div class="attr-chart" id="attrContrib"></div></div>
+        <div class="attr-chart-box"><h4>④ 异常检测（对比期每日订单，红=偏离均值 |Z|&gt;1.8）</h4><div class="attr-chart" id="attrAnom"></div></div>
     </div>
 </div>
 
@@ -1730,6 +1829,8 @@ function init() {
 
     // 自动执行一次对比
     runCompare();
+    // 初始化订单波动归因模块
+    attrInit();
 }
 
 // 折叠/展开指定模块（点击标题箭头），默认不隐藏
@@ -1744,10 +1845,419 @@ function toggleSection(sec) {
             if (id === 'channelPublicChart' && typeof channelPublicChart !== 'undefined' && channelPublicChart) channelPublicChart.resize();
             if (id === 'channelPrivateChart' && typeof channelPrivateChart !== 'undefined' && channelPrivateChart) channelPrivateChart.resize();
         });
+        if (typeof attrCharts !== 'undefined') {
+            ['attrTrend','attrDim','attrContrib','attrAnom'].forEach(function(id){
+                if(attrCharts[id]) try { attrCharts[id].resize(); } catch(e){}
+            });
+        }
     }
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ================= 订单波动归因分析（新增模块） =================
+const COMPARE_META = COMPARE_DATA.records_meta || {ch:['公域','私域','外部渠道'], point:[], type:[], product:[]};
+const ATTR_ROWS = (COMPARE_DATA.records || []).map(function(r){
+    return {
+        date: COMPARE_DATA.all_dates[r[0]],
+        ch: COMPARE_META.ch[r[1]],
+        point: COMPARE_META.point[r[2]],
+        type: COMPARE_META.type[r[3]],
+        product: COMPARE_META.product[r[4]],
+        orders: r[5]
+    };
+});
+const ATTR_DIMS = [['product','统一产品名'],['point','投放点位'],['ch','渠道'],['type','类型']];
+const ATTR_DIMLABEL = {ch:'渠道', point:'投放点位', type:'类型', product:'统一产品名'};
+const ATTR_DIMVALS = {ch: COMPARE_META.ch, point: COMPARE_META.point, type: COMPARE_META.type, product: COMPARE_META.product};
+const ATTR_FILTER = {};
+ATTR_DIMS.forEach(function(p){ ATTR_FILTER[p[0]] = {}; ATTR_DIMVALS[p[0]].forEach(function(v){ ATTR_FILTER[p[0]][v] = true; }); });
+const ATTR_ALLDATES = (COMPARE_DATA.all_dates || []).slice().sort();
+const ATTR_MAXDATE = ATTR_ALLDATES.length ? ATTR_ALLDATES[ATTR_ALLDATES.length-1] : '2026-09-23';
+const ATTR_MINDATE = ATTR_ALLDATES.length ? ATTR_ALLDATES[0] : '2024-09-24';
+
+function attrAddDays(s, n){
+    const d = new Date(s + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+}
+function attrPrevYearDate(s){
+    const y = parseInt(s.slice(0,4),10) - 1;
+    return y + s.slice(4);
+}
+function attrInRange(r, s, e){ return r.date >= s && r.date <= e; }
+
+let attrCharts = {};
+function attrInit(){
+    ['attrTrend','attrDim','attrContrib','attrAnom'].forEach(function(id){
+        attrCharts[id] = echarts.init(document.getElementById(id));
+    });
+    attrBuildChips();
+    ['attrT2s','attrT2e','attrT1s','attrT1e'].forEach(function(id){
+        const el = document.getElementById(id);
+        el.min = ATTR_MINDATE; el.max = ATTR_MAXDATE;
+    });
+    document.getElementById('attrT2s').value = attrAddDays(ATTR_MAXDATE,-29);
+    document.getElementById('attrT2e').value = ATTR_MAXDATE;
+    document.getElementById('attrT1s').value = attrAddDays(ATTR_MAXDATE,-59);
+    document.getElementById('attrT1e').value = attrAddDays(ATTR_MAXDATE,-30);
+    document.getElementById('attrMode').addEventListener('change', function(e){
+        document.getElementById('attrCustomDates').classList.toggle('show', e.target.value==='custom');
+        attrCompute();
+    });
+    document.getElementById('attrBreak').addEventListener('change', attrCompute);
+    document.getElementById('attrRecompute').addEventListener('click', attrCompute);
+    document.getElementById('attrHtml').addEventListener('click', attrExportHtml);
+    document.getElementById('attrWord').addEventListener('click', attrExportWord);
+    document.getElementById('attrPdf').addEventListener('click', attrExportPdf);
+    window.addEventListener('resize', function(){ Object.keys(attrCharts).forEach(function(k){ attrCharts[k].resize(); }); });
+    attrCompute();
+}
+
+function attrBuildChips(){
+    const box = document.getElementById('attrFilterRows');
+    box.innerHTML = '';
+    ATTR_DIMS.forEach(function(p){
+        const key = p[0], lab = p[1];
+        const row = document.createElement('div'); row.className = 'attr-dimrow';
+        const dl = document.createElement('div'); dl.className = 'attr-dim-label'; dl.textContent = lab; row.appendChild(dl);
+        const chips = document.createElement('div'); chips.className = 'attr-chips';
+        ATTR_DIMVALS[key].forEach(function(val){
+            const c = document.createElement('span'); c.className = 'attr-chip on'; c.textContent = val;
+            c.onclick = function(){
+                if(ATTR_FILTER[key][val]){ delete ATTR_FILTER[key][val]; c.classList.remove('on'); }
+                else { ATTR_FILTER[key][val] = true; c.classList.add('on'); }
+                attrUpdateSeg(); attrCompute();
+            };
+            chips.appendChild(c);
+        });
+        row.appendChild(chips);
+        const all = document.createElement('span'); all.className = 'attr-linkbtn'; all.textContent = '全选';
+        all.onclick = function(){ ATTR_DIMVALS[key].forEach(function(v){ ATTR_FILTER[key][v] = true; }); chips.querySelectorAll('.attr-chip').forEach(function(c){ c.classList.add('on'); }); attrUpdateSeg(); attrCompute(); };
+        const none = document.createElement('span'); none.className = 'attr-linkbtn'; none.textContent = '清空';
+        none.onclick = function(){ ATTR_DIMVALS[key].forEach(function(v){ delete ATTR_FILTER[key][v]; }); chips.querySelectorAll('.attr-chip').forEach(function(c){ c.classList.remove('on'); }); attrUpdateSeg(); attrCompute(); };
+        row.appendChild(all); row.appendChild(none);
+        box.appendChild(row);
+    });
+}
+function attrMatchesFilters(r){
+    return ATTR_DIMS.every(function(p){
+        const key = p[0];
+        const f = ATTR_FILTER[key];
+        const active = Object.keys(f).filter(function(k){ return f[k]; });
+        return active.length === 0 || f[r[key]];
+    });
+}
+function attrSegText(){
+    const parts = ATTR_DIMS.filter(function(p){
+        const key = p[0];
+        const active = Object.keys(ATTR_FILTER[key]).filter(function(k){ return ATTR_FILTER[key][k]; });
+        return active.length > 0 && active.length < ATTR_DIMVALS[key].length;
+    }).map(function(p){
+        const key = p[0], lab = p[1];
+        const active = Object.keys(ATTR_FILTER[key]).filter(function(k){ return ATTR_FILTER[key][k]; });
+        return lab + '∈{' + active.join('、') + '}';
+    });
+    return parts.length ? parts.join(' ∧ ') : '全量（无筛选）';
+}
+function attrUpdateSeg(){ document.getElementById('attrSegLine').textContent = '当前分析范围：' + attrSegText(); }
+
+function attrGetRanges(){
+    const mode = document.getElementById('attrMode').value;
+    if(mode === 'mom_mtd'){
+        const curYM = ATTR_MAXDATE.slice(0,7);
+        const t2s = curYM + '-01', t2e = ATTR_MAXDATE;
+        const prevD = new Date(ATTR_MAXDATE + 'T00:00:00');
+        prevD.setMonth(prevD.getMonth() - 1);
+        const prevYM = prevD.toISOString().slice(0,7);
+        const t1s = prevYM + '-01';
+        const dayCount = Math.round((new Date(t2e + 'T00:00:00') - new Date(t2s + 'T00:00:00')) / 86400000) + 1;
+        const t1e = attrAddDays(t1s, dayCount - 1);
+        return {t2s:t2s,t2e:t2e,t1s:t1s,t1e:t1e,label2:'本月('+t2s+'~'+t2e+')',label1:'上月同期('+t1s+'~'+t1e+')'};
+    }
+    if(mode === 'mom_7d'){
+        const t2e = ATTR_MAXDATE, t2s = attrAddDays(ATTR_MAXDATE,-6);
+        const t1e = attrAddDays(ATTR_MAXDATE,-7), t1s = attrAddDays(ATTR_MAXDATE,-13);
+        return {t2s:t2s,t2e:t2e,t1s:t1s,t1e:t1e,label2:'近7天('+t2s+'~'+t2e+')',label1:'前7天('+t1s+'~'+t1e+')'};
+    }
+    if(mode === 'mom'){
+        const t2e = ATTR_MAXDATE, t2s = attrAddDays(ATTR_MAXDATE,-29);
+        const t1e = attrAddDays(ATTR_MAXDATE,-30), t1s = attrAddDays(ATTR_MAXDATE,-59);
+        return {t2s:t2s,t2e:t2e,t1s:t1s,t1e:t1e,label2:'近30天('+t2s+'~'+t2e+')',label1:'前30天('+t1s+'~'+t1e+')'};
+    }
+    if(mode === 'yoy'){
+        const y = ATTR_MAXDATE.slice(0,4);
+        const t2s = y+'-01-01', t2e = ATTR_MAXDATE;
+        const t1s = (parseInt(y,10)-1)+'-01-01', t1e = attrPrevYearDate(ATTR_MAXDATE);
+        return {t2s:t2s,t2e:t2e,t1s:t1s,t1e:t1e,label2:'今年累计('+t2s+'~'+t2e+')',label1:'去年累计('+t1s+'~'+t1e+')'};
+    }
+    const t2s = document.getElementById('attrT2s').value || attrAddDays(ATTR_MAXDATE,-29);
+    const t2e = document.getElementById('attrT2e').value || ATTR_MAXDATE;
+    const t1s = document.getElementById('attrT1s').value || attrAddDays(ATTR_MAXDATE,-59);
+    const t1e = document.getElementById('attrT1e').value || attrAddDays(ATTR_MAXDATE,-30);
+    return {t2s:t2s,t2e:t2e,t1s:t1s,t1e:t1e,label2:'对比期('+t2s+'~'+t2e+')',label1:'基准期('+t1s+'~'+t1e+')'};
+}
+
+function attrDailyTotals(rows){
+    const m = {};
+    rows.forEach(function(r){ m[r.date] = (m[r.date]||0) + r.orders; });
+    const keys = Object.keys(m).sort();
+    return {map:m, keys:keys, vals:keys.map(function(k){ return m[k]; })};
+}
+function attrGroupDim(rows, dim){
+    const m = {};
+    rows.forEach(function(r){ m[r[dim]] = (m[r[dim]]||0) + r.orders; });
+    return m;
+}
+
+let attrLast = null;
+function attrCompute(){
+    const ranges = attrGetRanges();
+    const dim = document.getElementById('attrBreak').value;
+    const pred2 = function(r){ return attrInRange(r, ranges.t2s, ranges.t2e) && attrMatchesFilters(r); };
+    const pred1 = function(r){ return attrInRange(r, ranges.t1s, ranges.t1e) && attrMatchesFilters(r); };
+    const t2Rows = ATTR_ROWS.filter(pred2), t1Rows = ATTR_ROWS.filter(pred1);
+    const t2d = attrDailyTotals(t2Rows), t1d = attrDailyTotals(t1Rows);
+    const g2 = attrGroupDim(t2Rows, dim), g1 = attrGroupDim(t1Rows, dim);
+    const cats = [];
+    const keyset = {};
+    Object.keys(g2).forEach(function(k){ keyset[k]=1; });
+    Object.keys(g1).forEach(function(k){ keyset[k]=1; });
+    Object.keys(keyset).forEach(function(k){ const v2=g2[k]||0, v1=g1[k]||0; cats.push({key:k, v2:v2, v1:v1, delta:v2-v1}); });
+    cats.sort(function(a,b){ return b.v2 - a.v2; });
+    const t2 = t2d.vals.reduce(function(a,b){ return a+b; },0);
+    const t1 = t1d.vals.reduce(function(a,b){ return a+b; },0);
+    const delta = t2 - t1, rate = t1 ? (delta/t1*100) : 0;
+    const posSorted = cats.filter(function(c){ return c.delta>0; }).sort(function(a,b){ return b.delta-a.delta; });
+    const negSorted = cats.filter(function(c){ return c.delta<0; }).sort(function(a,b){ return a.delta-b.delta; });
+    const posTop = posSorted[0], negTop = negSorted[0];
+    const posTop2 = posSorted.slice(0,2), negTop2 = negSorted.slice(0,2);
+    const share = (posTop&&negTop&&delta) ? ((Math.abs(posTop.delta)+Math.abs(negTop.delta))/Math.abs(delta)*100) : 0;
+    const gross = cats.reduce(function(a,c){ return a + Math.abs(c.delta); },0);
+    const share2 = (posTop2.length&&negTop2.length&&gross) ? ((posTop2.reduce(function(a,c){return a+c.delta;},0) + Math.abs(negTop2.reduce(function(a,c){return a+c.delta;},0)))/gross*100) : 0;
+    const anom = attrRenderAnom(t2d);
+    const seg = attrSegText();
+    attrRenderKpi(t2, t1, ranges.label2, ranges.label1, delta, rate);
+    attrRenderTrend(t2d, t1d);
+    attrRenderDim(g2, g1, cats);
+    attrRenderContrib(cats);
+    attrRenderConclusion({t2:t2,t1:t1,delta:delta,rate:rate,dim:dim,cats:cats,posTop:posTop,negTop:negTop,posTop2:posTop2,negTop2:negTop2,share:share,share2:share2,anom:anom,seg:seg}, ranges);
+    attrLast = {ranges:ranges, dim:dim, t2:t2, t1:t1, delta:delta, rate:rate, cats:cats, posTop:posTop, negTop:negTop, posTop2:posTop2, negTop2:negTop2, share:share, share2:share2, anom:anom, seg:seg, t2d:t2d};
+    attrLast.conclusionHTML = document.getElementById('attrConclusion').innerHTML;
+}
+
+function attrRenderKpi(t2,t1,label2,label1,delta,rate){
+    const dir = delta>0?'up':(delta<0?'down':'');
+    const sign = delta>0?'+':'';
+    const dirWord = delta>0?'涨':(delta<0?'跌':'持平');
+    const html =
+        '<div class="attr-kpi"><div class="lab">'+label2+'</div><div class="num">'+t2.toLocaleString()+'</div><div class="meta">单（成功订单）</div></div>'+
+        '<div class="attr-kpi"><div class="lab">'+label1+'</div><div class="num">'+t1.toLocaleString()+'</div><div class="meta">单（成功订单）</div></div>'+
+        '<div class="attr-kpi k-'+dir+'"><div class="lab">波动量 Δ</div><div class="num '+dir+'">'+sign+delta.toLocaleString()+'</div><div class="meta">对比期 − 基准期</div></div>'+
+        '<div class="attr-kpi k-'+dir+'"><div class="lab">波动率</div><div class="num '+dir+'">'+sign+rate.toFixed(1)+'%</div><div class="meta">'+dirWord+'</div></div>';
+    document.getElementById('attrKpi').innerHTML = html;
+}
+
+function attrRenderTrend(t2d, t1d){
+    const N = Math.max(t2d.vals.length, t1d.vals.length);
+    const x = []; for(let i=1;i<=N;i++) x.push(i);
+    const pad = function(arr){ const a=arr.slice(); while(a.length<N) a.unshift(null); return a; };
+    attrCharts.attrTrend.setOption({
+        tooltip:{trigger:'axis'},
+        legend:{data:['对比期','基准期'],top:0},
+        grid:{left:55,right:18,top:30,bottom:40},
+        xAxis:{type:'category',data:x,axisLabel:{color:'#67737e'},axisTick:{show:false}},
+        yAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
+        series:[
+            {name:'对比期',type:'line',data:pad(t2d.vals),smooth:true,showSymbol:false,lineStyle:{width:2,color:'#667eea'},itemStyle:{color:'#667eea'}},
+            {name:'基准期',type:'line',data:pad(t1d.vals),smooth:true,showSymbol:false,lineStyle:{width:2,color:'#3ba272'},itemStyle:{color:'#3ba272'}}
+        ]
+    }, true);
+}
+
+function attrRenderDim(g2, g1, cats){
+    const cats2 = cats.slice().sort(function(a,b){ return b.v2-a.v2; });
+    const names = cats2.map(function(c){ return c.key; });
+    const v2 = cats2.map(function(c){ return c.v2; });
+    const v1 = cats2.map(function(c){ return c.v1; });
+    attrCharts.attrDim.setOption({
+        tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+        legend:{data:['对比期','基准期'],top:0},
+        grid:{left:8,right:18,top:30,bottom:10,containLabel:true},
+        xAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
+        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11},axisTick:{show:false}},
+        series:[
+            {name:'对比期',type:'bar',data:v2,itemStyle:{color:'#667eea'}},
+            {name:'基准期',type:'bar',data:v1,itemStyle:{color:'#3ba272'}}
+        ]
+    }, true);
+}
+
+function attrRenderContrib(cats){
+    const sorted = cats.slice().sort(function(a,b){ return a.delta-b.delta; });
+    const data = sorted.map(function(c){ return {value:c.delta, itemStyle:{color: c.delta>=0 ? '#e85d6a' : '#3ba272'}}; });
+    const names = sorted.map(function(c){ return c.key; });
+    attrCharts.attrContrib.setOption({
+        tooltip:{trigger:'axis',formatter:function(p){ const v=p[0].value; return p[0].axisValue+'<br/>'+(v>0?'+':'')+v.toLocaleString()+' 单'; }},
+        grid:{left:8,right:48,top:14,bottom:10,containLabel:true},
+        xAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
+        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11},axisTick:{show:false}},
+        series:[{type:'bar',data:data,label:{show:true,position:'right',formatter:function(p){ return (p.value>0?'+':'')+p.value.toLocaleString(); },color:'#1f2933',fontSize:11}}]
+    }, true);
+}
+
+function attrRenderAnom(t2d){
+    const vals = t2d.vals, mean = vals.reduce(function(a,b){return a+b;},0)/vals.length;
+    const sd = Math.sqrt(vals.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/vals.length);
+    const data = [], anom = [];
+    vals.forEach(function(v,i){
+        const z = sd ? (v-mean)/sd : 0;
+        const isA = Math.abs(z) > 1.8;
+        data.push({value:v, itemStyle:{color:isA?'#e85d6a':'#667eea'}});
+        if(isA) anom.push({date:t2d.keys[i], z:z});
+    });
+    attrCharts.attrAnom.setOption({
+        tooltip:{trigger:'axis',formatter:function(p){ const i=p[0].dataIndex; return t2d.keys[i]+'<br/>'+vals[i].toLocaleString()+' 单'; }},
+        grid:{left:55,right:18,top:14,bottom:40},
+        xAxis:{type:'category',data:t2d.keys,axisLabel:{color:'#67737e',interval:Math.floor(t2d.keys.length/8)},axisTick:{show:false}},
+        yAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
+        series:[{type:'bar',data:data,barWidth:'60%'}]
+    }, true);
+    return anom;
+}
+
+function attrRenderConclusion(r, ranges){
+    const label2 = ranges.label2, label1 = ranges.label1;
+    const dir = r.delta>0?'涨':(r.delta<0?'跌':'持平');
+    const upCls='hl-up', downCls='hl-down';
+    let html = '<h3>📌 自动归因结论</h3>';
+    html += '<p>分析范围：<b>'+r.seg+'</b>。</p>';
+    html += '<p>对比期（<span class="tag">'+label2+'</span>）订单 <b>'+r.t2.toLocaleString()+'</b> 单，较基准期（<span class="tag">'+label1+'</span>）<b>'+r.t1.toLocaleString()+'</b> 单，'+
+        '<span class="'+(r.delta>0?upCls:downCls)+'">'+dir+' '+Math.abs(r.delta).toLocaleString()+' 单（'+(r.delta>0?'+':'')+r.rate.toFixed(1)+'%）</span>。</p>';
+    let dimHtml = '';
+    if(r.posTop || r.negTop){
+        const moved = r.cats.filter(function(c){ return Math.abs(c.delta)>0; }).length;
+        if(r.dim === 'product'){
+            const posTxt = r.posTop2.length ? r.posTop2.map(function(c){ return '<span class="'+upCls+'">'+c.key+'（+'+c.delta.toLocaleString()+' 单）</span>'; }).join('、') : '无';
+            const negTxt = r.negTop2.length ? r.negTop2.map(function(c){ return '<span class="'+downCls+'">'+c.key+'（−'+Math.abs(c.delta).toLocaleString()+' 单）</span>'; }).join('、') : '无';
+            dimHtml = '<p>按【<b>统一产品名</b>】维度在范围内拆解：正向拉动前 2 名为 '+posTxt+'，负向拖累前 2 名为 '+negTxt+
+                (r.posTop2.length&&r.negTop2.length ? '，两者合计占该维度全部波动来源约 <b>'+r.share2.toFixed(0)+'%</b>。' : '。')+'</p>'+
+                '<p>该维度共 <b>'+r.cats.length+'</b> 个分项，其中 <b>'+moved+'</b> 个较基准期发生变化。'+
+                (r.negTop2.length ? '建议优先排查 '+negTxt+' 的投放 / 活动变动。' : '若需定位拖累项，可切换拆解维度继续下钻。')+'</p>';
+        } else {
+            const posTxt = r.posTop ? '<span class="'+upCls+'">'+r.posTop.key+'（+'+r.posTop.delta.toLocaleString()+' 单）</span>' : '无';
+            const negTxt = r.negTop ? '<span class="'+downCls+'">'+r.negTop.key+'（−'+Math.abs(r.negTop.delta).toLocaleString()+' 单）</span>' : '无';
+            dimHtml = '<p>按【<b>'+ATTR_DIMLABEL[r.dim]+'</b>】维度在范围内拆解：正向拉动最大为 '+posTxt+'，负向拖累最大为 '+negTxt+
+                (r.posTop&&r.negTop ? '，两者合计解释约 <b>'+r.share.toFixed(0)+'%</b> 的总波动。' : '。')+'</p>'+
+                '<p>该维度共 <b>'+r.cats.length+'</b> 个分项，其中 <b>'+moved+'</b> 个较基准期发生变化。'+
+                (r.negTop ? '建议优先排查 <span class="'+downCls+'">'+r.negTop.key+'</span> 的投放 / 活动变动。' : '若需定位拖累项，可切换拆解维度继续下钻。')+'</p>';
+        }
+    }
+    html += dimHtml;
+    if(r.anom.length){
+        const sample = r.anom.slice(0,3).map(function(a){ return a.date+'('+(a.z>0?'+':'')+a.z.toFixed(1)+'σ)'; }).join('、');
+        html += '<p>期间检测到 <b>'+r.anom.length+'</b> 个异常波动日（偏离均值 |Z|&gt;1.8），如：'+sample+'。</p>';
+    } else {
+        html += '<p>期间未检测到显著异常波动日。</p>';
+    }
+    document.getElementById('attrConclusion').innerHTML = html;
+}
+
+function attrChartImgs(){
+    // 逐个抓取，单个失败（如折叠态 0 尺寸）不拖垮整次导出
+    return Object.keys(attrCharts).map(function(k){
+        try {
+            const ch = attrCharts[k];
+            const el = document.getElementById(k);
+            if(el && (!el.clientWidth || !el.clientHeight)) ch.resize(); // 容错：尺寸异常先 resize
+            return ch.getDataURL({pixelRatio:2, backgroundColor:'#fff'});
+        } catch(e){ console.warn('图表导出失败: '+k, e); return ''; }
+    }).filter(Boolean);
+}
+function attrExportStatus(msg, ok){
+    const el = document.getElementById('attrExportMsg');
+    if(!el) return;
+    el.textContent = msg; el.className = 'attr-export-msg' + (ok===true?' ok':ok===false?' err':'');
+}
+function attrReportHTML(){
+    if(!attrLast) attrCompute();   // 兜底：若尚未计算先算一次
+    const L = attrLast;
+    if(!L){ attrExportStatus('暂无可导出数据，请先点击“重新分析”', false); return ''; }
+    const imgs = attrChartImgs();
+    const up = '#e85d6a', down = '#3ba272';
+    const trows = L.cats.map(function(c){
+        const col = c.delta>=0 ? up : down;
+        return '<tr><td>'+c.key+'</td><td>'+c.v1.toLocaleString()+'</td><td>'+c.v2.toLocaleString()+'</td>'+
+            '<td style="color:'+col+'">'+(c.delta>0?'+':'')+c.delta.toLocaleString()+'</td></tr>';
+    }).join('');
+    const imgHtml = imgs.map(function(s){ return '<img src="'+s+'" style="width:100%;margin:10px 0;border:1px solid #e3e8ef;border-radius:8px;">'; }).join('');
+    return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>订单波动归因报告</title>'+
+        '<style>body{font-family:-apple-system,\'Microsoft YaHei\',sans-serif;max-width:1000px;margin:20px auto;padding:0 20px;color:#1f2933}'+
+        'h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #e3e8ef;padding:8px;text-align:right}'+
+        'th:first-child,td:first-child{text-align:left}.kpis{display:flex;gap:12px;flex-wrap:wrap}.kpi{border:1px solid #e3e8ef;border-radius:10px;padding:12px 16px;min-width:160px}'+
+        '.kpi .l{color:#67737e;font-size:12px}.kpi .n{font-size:22px;font-weight:800;margin-top:4px}.up{color:#e85d6a}.down{color:#3ba272}'+
+        'p{line-height:1.8;font-size:14px}</style></head><body>'+
+        '<h1>订单波动归因报告</h1><div style="color:#67737e">生成时间：'+new Date().toLocaleString()+'</div>'+
+        '<div style="margin:6px 0"><b>分析范围：</b>'+L.seg+'</div>'+
+        '<div class="kpis"><div class="kpi"><div class="l">'+L.ranges.label2+'</div><div class="n">'+L.t2.toLocaleString()+'</div></div>'+
+        '<div class="kpi"><div class="l">'+L.ranges.label1+'</div><div class="n">'+L.t1.toLocaleString()+'</div></div>'+
+        '<div class="kpi"><div class="l">波动量 Δ</div><div class="n '+(L.delta>=0?'up':'down')+'">'+(L.delta>0?'+':'')+L.delta.toLocaleString()+'</div></div>'+
+        '<div class="kpi"><div class="l">波动率</div><div class="n '+(L.delta>=0?'up':'down')+'">'+(L.delta>0?'+':'')+L.rate.toFixed(1)+'%</div></div></div>'+
+        '<h3>维度贡献明细（拆解维度：'+ATTR_DIMLABEL[L.dim]+'）</h3>'+
+        '<table><tr><th>分项</th><th>基准期</th><th>对比期</th><th>Δ</th></tr>'+trows+'</table>'+
+        '<h3>自动归因结论</h3>'+(L.conclusionHTML||'')+
+        '<h3>图表</h3>'+(imgHtml || '<p style="color:#999">（部分图表因当前尺寸/折叠状态未能导出图片，不影响其余内容）</p>')+
+        '</body></html>';
+}
+function attrDownload(blob, filename){
+    // 优先兼容老版 Edge / IE 内核：它们不支持 <a download>+blob，会弹「需要使用新应用打开 blob 链接」
+    if (window.navigator && (navigator.msSaveOrOpenBlob || navigator.msSaveBlob)) {
+        (navigator.msSaveOrOpenBlob || navigator.msSaveBlob).call(navigator, blob, filename);
+        return;
+    }
+    // 现代浏览器：标准 blob 下载
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    a.rel = 'noopener'; a.target = '_self';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+}
+function attrExportHtml(){
+    try {
+        const html = attrReportHTML(); if(!html) return;
+        attrDownload(new Blob([html], {type:'text/html;charset=utf-8'}), '订单波动归因报告.html');
+        attrExportStatus('HTML 报告已生成，开始下载', true);
+    } catch(e){ console.error(e); attrExportStatus('导出失败：'+(e&&e.message||e), false); }
+}
+function attrExportWord(){
+    try {
+        const html = attrReportHTML(); if(!html) return;
+        attrDownload(new Blob(['﻿'+html], {type:'application/msword'}), '订单波动归因报告.doc');
+        attrExportStatus('Word 文档已生成，开始下载', true);
+    } catch(e){ console.error(e); attrExportStatus('导出失败：'+(e&&e.message||e), false); }
+}
+function attrExportPdf(){
+    try {
+        const html = attrReportHTML(); if(!html) return;
+        // 同文档隐藏 iframe 打印，绕开弹窗拦截
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;height:1200px;border:0;';
+        document.body.appendChild(iframe);
+        const idoc = iframe.contentWindow.document;
+        idoc.open(); idoc.write(html); idoc.close();
+        iframe.contentWindow.focus();
+        setTimeout(function(){
+            try { iframe.contentWindow.print(); } catch(e){ console.warn(e); }
+            setTimeout(function(){ if(iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 1000);
+        }, 400);
+        attrExportStatus('PDF 打印窗口已打开，请在对话框选择“另存为 PDF”', true);
+    } catch(e){ console.error(e); attrExportStatus('导出失败：'+(e&&e.message||e), false); }
+}
 
 window.addEventListener('resize', function() {
     if (channelPublicChart) channelPublicChart.resize();
