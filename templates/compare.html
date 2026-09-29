@@ -1925,8 +1925,31 @@ function attrOpenModal(id){
     document.getElementById('attrModalTitle').textContent = (titles[id]||'') + '（放大查看）';
     document.getElementById('attrModal').classList.add('show');
     if(!attrModalChart){ attrModalChart = echarts.init(document.getElementById('attrModalChart')); }
-    var opt = JSON.parse(JSON.stringify(src.getOption()));
+    var opt = src.getOption();
     attrBoostFont(opt, 1.3);
+    var attrModalPanelEl = document.querySelector('#attrModal .attr-modal-panel');
+    var attrModalChartEl = document.getElementById('attrModalChart');
+    var attrIsBarH = (id === 'attrDim' || id === 'attrContrib');
+    if(attrIsBarH && opt.yAxis){
+        var attrY = Array.isArray(opt.yAxis) ? opt.yAxis[0] : opt.yAxis;
+        var attrN = (attrY.data && attrY.data.length) ? attrY.data.length : 0;
+        if(attrN > 0){
+            var attrNeed = Math.max(attrN * 40 + 160, 460);
+            attrModalChartEl.style.height = attrNeed + 'px';
+            attrModalChartEl.style.minHeight = attrNeed + 'px';
+            attrModalPanelEl.style.height = 'auto';
+            attrModalPanelEl.style.maxHeight = '92vh';
+            attrModalPanelEl.style.overflowY = 'auto';
+            attrY.axisLabel = attrY.axisLabel || {};
+            attrY.axisLabel.interval = 0;
+        }
+    } else {
+        attrModalChartEl.style.height = '';
+        attrModalChartEl.style.minHeight = '';
+        attrModalPanelEl.style.height = '';
+        attrModalPanelEl.style.maxHeight = '';
+        attrModalPanelEl.style.overflowY = '';
+    }
     attrModalChart.setOption(opt, true);
     setTimeout(function(){ attrModalChart.resize(); }, 30);
 }
