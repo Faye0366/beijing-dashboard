@@ -2097,6 +2097,8 @@ function attrCompute(){
     attrLast.conclusionHTML = document.getElementById('attrConclusion').innerHTML;
 }
 
+function attrShortLabel(v){ const s=String(v); return (window.innerWidth<=880 && s.length>7) ? s.slice(0,7)+'…' : s; }
+function attrCompactNum(v){ if(window.innerWidth>880) return Number(v).toLocaleString(); const a=Math.abs(v); if(a>=100000000) return (v/100000000).toFixed(1).replace(/\.0$/,'')+'亿'; if(a>=10000) return (v/10000).toFixed(1).replace(/\.0$/,'')+'万'; return Number(v).toLocaleString(); }
 function attrRenderKpi(t2,t1,label2,label1,delta,rate){
     const dir = delta>0?'up':(delta<0?'down':'');
     const sign = delta>0?'+':'';
@@ -2135,8 +2137,8 @@ function attrRenderDim(g2, g1, cats){
         tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
         legend:{data:['对比期','基准期'],top:0},
         grid:{left:8,right:18,top:30,bottom:10,containLabel:true},
-        xAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
-        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11},axisTick:{show:false},inverse:true},
+        xAxis:{type:'value',axisLabel:{color:'#67737e',formatter:attrCompactNum},splitLine:{lineStyle:{color:'#eef1f5'}}},
+        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11,formatter:attrShortLabel},axisTick:{show:false},inverse:true},
         series:[
             {name:'对比期',type:'bar',data:v2,itemStyle:{color:'#667eea'}},
             {name:'基准期',type:'bar',data:v1,itemStyle:{color:'#3ba272'}}
@@ -2151,8 +2153,8 @@ function attrRenderContrib(cats){
     attrCharts.attrContrib.setOption({
         tooltip:{trigger:'axis',formatter:function(p){ const v=p[0].value; return p[0].axisValue+'<br/>'+(v>0?'+':'')+v.toLocaleString()+' 单'; }},
         grid:{left:8,right:48,top:14,bottom:10,containLabel:true},
-        xAxis:{type:'value',axisLabel:{color:'#67737e'},splitLine:{lineStyle:{color:'#eef1f5'}}},
-        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11},axisTick:{show:false}},
+        xAxis:{type:'value',axisLabel:{color:'#67737e',formatter:attrCompactNum},splitLine:{lineStyle:{color:'#eef1f5'}}},
+        yAxis:{type:'category',data:names,axisLabel:{color:'#67737e',fontSize:11,formatter:attrShortLabel},axisTick:{show:false}},
         series:[{type:'bar',data:data,label:{show:true,position:'right',formatter:function(p){ return (p.value>0?'+':'')+p.value.toLocaleString(); },color:'#1f2933',fontSize:11}}]
     }, true);
 }
