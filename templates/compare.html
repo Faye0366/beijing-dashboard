@@ -16,6 +16,7 @@
             background: #f0f2f5;
             color: #333;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .header {
@@ -393,7 +394,7 @@
 
         .chart-container {
             width: 100%;
-            height: 100%;
+            height: 320px;
             min-height: 300px;
         }
 
@@ -495,7 +496,7 @@
         .attr-conclusion .hl-up { color:#e85d6a; font-weight:600; }
         .attr-conclusion .hl-down { color:#3ba272; font-weight:600; }
         .attr-charts-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-        .attr-chart-box { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); position:relative; }
+        .attr-chart-box { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); position:relative; min-width:0; }
         .attr-chart-box h4 { font-size:13.5px; color:#333; margin-bottom:8px; font-weight:600; }
         .attr-chart { width:100%; height:300px; }
         .attr-zoom-btn { position:absolute; top:10px; right:12px; z-index:5; width:30px; height:30px; border:none; border-radius:8px; background:rgba(102,126,234,0.10); color:#667eea; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
@@ -507,7 +508,7 @@
         .attr-modal-chart { flex:1; width:100%; min-height:0; }
         .attr-modal-close { position:absolute; top:10px; right:12px; width:34px; height:34px; border:none; border-radius:50%; background:#f0f1f5; color:#555; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
         .attr-modal-close:hover { background:#e2e4ea; }
-        @media (max-width:880px){ .attr-kpi-grid{grid-template-columns:repeat(2,1fr);} .attr-charts-grid{grid-template-columns:1fr;} }
+        @media (max-width:880px){ .attr-kpi-grid{grid-template-columns:repeat(2,1fr);} .attr-charts-grid{grid-template-columns:1fr;} .table-chart-wrapper{flex-direction:column; align-items:stretch;} .table-chart-wrapper .table-side,.table-chart-wrapper .chart-side{flex:1 1 auto; width:100%;} }
 </style>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 </head>
