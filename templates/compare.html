@@ -495,9 +495,18 @@
         .attr-conclusion .hl-up { color:#e85d6a; font-weight:600; }
         .attr-conclusion .hl-down { color:#3ba272; font-weight:600; }
         .attr-charts-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-        .attr-chart-box { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .attr-chart-box { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); position:relative; }
         .attr-chart-box h4 { font-size:13.5px; color:#333; margin-bottom:8px; font-weight:600; }
         .attr-chart { width:100%; height:300px; }
+        .attr-zoom-btn { position:absolute; top:10px; right:12px; z-index:5; width:30px; height:30px; border:none; border-radius:8px; background:rgba(102,126,234,0.10); color:#667eea; font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
+        .attr-zoom-btn:hover { background:rgba(102,126,234,0.24); }
+        .attr-modal { position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; background:rgba(20,24,33,0.55); backdrop-filter:blur(2px); }
+        .attr-modal.show { display:flex; }
+        .attr-modal-panel { position:relative; width:min(92vw, calc(92vh * 16 / 9)); height:min(92vh, calc(92vw * 9 / 16)); max-width:1600px; background:#fff; border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,0.35); padding:16px 18px; display:flex; flex-direction:column; }
+        .attr-modal-title { font-size:15px; font-weight:700; color:#222; margin-bottom:8px; }
+        .attr-modal-chart { flex:1; width:100%; min-height:0; }
+        .attr-modal-close { position:absolute; top:10px; right:12px; width:34px; height:34px; border:none; border-radius:50%; background:#f0f1f5; color:#555; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .attr-modal-close:hover { background:#e2e4ea; }
         @media (max-width:880px){ .attr-kpi-grid{grid-template-columns:repeat(2,1fr);} .attr-charts-grid{grid-template-columns:1fr;} }
 </style>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
@@ -756,10 +765,17 @@
     <div class="attr-kpi-grid" id="attrKpi"></div>
     <div class="attr-conclusion" id="attrConclusion"></div>
     <div class="attr-charts-grid">
-        <div class="attr-chart-box"><h4>① 趋势对比（对比期 vs 基准期，按各自天数对齐）</h4><div class="attr-chart" id="attrTrend"></div></div>
-        <div class="attr-chart-box"><h4>② 维度对比（各分项 T1 vs T2 订单量）</h4><div class="attr-chart" id="attrDim"></div></div>
-        <div class="attr-chart-box"><h4>③ 贡献排名（各分项对总波动的拉动，红涨绿跌）</h4><div class="attr-chart" id="attrContrib"></div></div>
-        <div class="attr-chart-box"><h4>④ 异常检测（对比期每日订单，红=偏离均值 |Z|&gt;1.8）</h4><div class="attr-chart" id="attrAnom"></div></div>
+        <div class="attr-chart-box"><button class="attr-zoom-btn" data-id="attrTrend" title="点击放大查看">⛶</button><h4>① 趋势对比（对比期 vs 基准期，按各自天数对齐）</h4><div class="attr-chart" id="attrTrend"></div></div>
+        <div class="attr-chart-box"><button class="attr-zoom-btn" data-id="attrDim" title="点击放大查看">⛶</button><h4>② 维度对比（各分项 T1 vs T2 订单量）</h4><div class="attr-chart" id="attrDim"></div></div>
+        <div class="attr-chart-box"><button class="attr-zoom-btn" data-id="attrContrib" title="点击放大查看">⛶</button><h4>③ 贡献排名（各分项对总波动的拉动，红涨绿跌）</h4><div class="attr-chart" id="attrContrib"></div></div>
+        <div class="attr-chart-box"><button class="attr-zoom-btn" data-id="attrAnom" title="点击放大查看">⛶</button><h4>④ 异常检测（对比期每日订单，红=偏离均值 |Z|&gt;1.8）</h4><div class="attr-chart" id="attrAnom"></div></div>
+    </div>
+    <div class="attr-modal" id="attrModal">
+        <div class="attr-modal-panel">
+            <button class="attr-modal-close" id="attrModalClose" title="关闭">✕</button>
+            <div class="attr-modal-title" id="attrModalTitle"></div>
+            <div class="attr-modal-chart" id="attrModalChart"></div>
+        </div>
     </div>
 </div>
 
@@ -1891,6 +1907,31 @@ function attrPrevYearDate(s){
 function attrInRange(r, s, e){ return r.date >= s && r.date <= e; }
 
 let attrCharts = {};
+let attrModalChart = null;
+function attrBoostFont(obj, scale){
+    if(Array.isArray(obj)){ for(var i=0;i<obj.length;i++){ attrBoostFont(obj[i], scale); } return; }
+    if(obj && typeof obj === 'object'){
+        for(var k in obj){
+            if(k === 'fontSize' && typeof obj[k] === 'number'){ obj[k] = Math.round(obj[k]*scale); }
+            else { attrBoostFont(obj[k], scale); }
+        }
+    }
+}
+function attrOpenModal(id){
+    var src = attrCharts[id];
+    if(!src) return;
+    var titles = {attrTrend:'① 趋势对比', attrDim:'② 维度对比', attrContrib:'③ 贡献排名', attrAnom:'④ 异常检测'};
+    document.getElementById('attrModalTitle').textContent = (titles[id]||'') + '（放大查看）';
+    document.getElementById('attrModal').classList.add('show');
+    if(!attrModalChart){ attrModalChart = echarts.init(document.getElementById('attrModalChart')); }
+    var opt = JSON.parse(JSON.stringify(src.getOption()));
+    attrBoostFont(opt, 1.3);
+    attrModalChart.setOption(opt, true);
+    setTimeout(function(){ attrModalChart.resize(); }, 30);
+}
+function attrCloseModal(){
+    document.getElementById('attrModal').classList.remove('show');
+}
 function attrInit(){
     ['attrTrend','attrDim','attrContrib','attrAnom'].forEach(function(id){
         attrCharts[id] = echarts.init(document.getElementById(id));
@@ -1913,7 +1954,13 @@ function attrInit(){
     document.getElementById('attrHtml').addEventListener('click', attrExportHtml);
     document.getElementById('attrWord').addEventListener('click', attrExportWord);
     document.getElementById('attrPdf').addEventListener('click', attrExportPdf);
-    window.addEventListener('resize', function(){ Object.keys(attrCharts).forEach(function(k){ attrCharts[k].resize(); }); });
+    window.addEventListener('resize', function(){ Object.keys(attrCharts).forEach(function(k){ attrCharts[k].resize(); }); if(attrModalChart && document.getElementById('attrModal').classList.contains('show')) attrModalChart.resize(); });
+    document.querySelectorAll('.attr-zoom-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){ attrOpenModal(btn.getAttribute('data-id')); });
+    });
+    document.getElementById('attrModalClose').addEventListener('click', attrCloseModal);
+    document.getElementById('attrModal').addEventListener('click', function(e){ if(e.target === this) attrCloseModal(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') attrCloseModal(); });
     attrCompute();
 }
 
